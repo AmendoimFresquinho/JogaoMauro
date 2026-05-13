@@ -3,13 +3,19 @@
 #include "raylib.h"
 #include <stdbool.h>
 
-//Struct jogador
-
+    // Struct de um corpo físico
 typedef struct {
-    float x; //Posição x do mario
-    float y; //Posição x do mario
+    float posX, posY;
+    float velX, velY;
+    float massa
+} CorpoFisico;
+
+    //Struct jogador
+typedef struct {
+    CorpoFisico corpoFisico;
+    float aceleracao; // Taxa em que ele aumenta a velocidade
+    float forcaPulo; // Força em que ele pula
     int tamanho; //tamanho (por enquanto) do mario
-    float velocidadeY; //força da gravidade
     bool noChao; //ele esta no chao ou nao?
     bool ativo; //ta vivo?
 } Jogador;
