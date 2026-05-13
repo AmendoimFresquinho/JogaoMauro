@@ -51,7 +51,6 @@ void movimento(Jogador *p, Mapa *mapa) {
     int gridColunaMeio = (int)(p->x + 10) / TAMANHO_BLOCOS;
     int gridLinhaCima = (int)(p->y) / TAMANHO_BLOCOS;
     int gridColunaCima = (int)(p->x + 10) / TAMANHO_BLOCOS;
-    static float xEscada = 0;
 
     // Deixa ele ficar no chao
 
