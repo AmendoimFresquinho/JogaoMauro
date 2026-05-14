@@ -20,6 +20,20 @@ typedef struct {
     bool ativo; //ta vivo?
 } Jogador;
 
+typedef struct {
+    float x;
+    float y;
+    int direcao;
+    bool ativo;
+} Opps;
+
+typedef enum {
+    MENU,       
+    JOGANDO,   
+    PAUSADO,    
+    MORTO  
+} EstadosJogo;
+
 //Definições
 
 #define LARGURA_TELA 900
@@ -30,6 +44,8 @@ typedef struct {
 #define FORCA_PULO -7.0f  
 #define LINHA_DO_CHAO 500  
 #define VELOCIDADE_ESCADA 30.0f
+#define VELOCIDADE_OPPS 3
+#define VELOCIDADE_OPPS_DIFICIL 6
 
 //Definições do mapa
 
@@ -49,6 +65,8 @@ void movimento(Jogador *p, Mapa *mapa);
 
 void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo);
 void DesenharMapa(Mapa *mapa);
+void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos);
+void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos);
 
 
 #endif
