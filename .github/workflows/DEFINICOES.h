@@ -18,6 +18,7 @@ typedef struct {
     int tamanho; //tamanho (por enquanto) do mario
     bool noChao; //ele esta no chao ou nao?
     bool ativo; //ta vivo?
+    int vidas;
 } Jogador;
 
 typedef struct {
@@ -31,8 +32,16 @@ typedef enum {
     MENU,       
     JOGANDO,   
     PAUSADO,    
-    MORTO  
+    MORTO,  
+    CONFIGS,
+    RANKING
 } EstadosJogo;
+
+typedef enum{
+    FACIL,
+    NORMAL,
+    DIFICIL
+} Dificuldade;
 
 //Definições
 
@@ -63,10 +72,11 @@ void movimento(Jogador *p, Mapa *mapa);
 
 //Funções do Mapa
 
-void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo);
+void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, int *numInimigos);
 void DesenharMapa(Mapa *mapa);
-void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos);
-void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos);
+void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel);
+void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade);
+void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa);
 
 
 #endif
