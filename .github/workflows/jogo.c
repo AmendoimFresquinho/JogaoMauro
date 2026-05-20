@@ -2,6 +2,8 @@
 #include "DEFINICOES.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <time.h>
+#include<stdlib.h>
 float velocidadeInimigo;
 int main(){
     
@@ -22,12 +24,14 @@ int main(){
     Color cortexto2 = RED;
     Color cortexto3 = WHITE;
     float tempoInvencivel = 2.0f;
-    int numInimigos = 0, faseAtual = 1;
+    int numInimigos = 0, faseAtual = 1, numrandom = 1;
+
+    srand(time(NULL));
 
     // Inicializa o primeiro mapa
 
     sprintf(numMapa, "mapa%d.txt", faseAtual);
-    LerMapa(&mapa, &mario, numMapa, inimigo, &numInimigos);
+    LerMapa(&mapa, &mario, numMapa, inimigo, &numInimigos, &estado);
 
     // Variaveis de tamanho de texto e centralização de texto (puramente visual)
 
@@ -67,10 +71,15 @@ int main(){
 
             faseAtual = 1;
 
-            Rectangle iniciaJogo = {xSelecione + 100, 400, larguraMorto - 60, 60};
-            Rectangle configs = {xSelecione + 100, 500, larguraMorto + 40, 60};           
-            Rectangle ranking = {xSelecione + 100, 600, larguraMorto - 160, 60};
-            Rectangle sairJogo = {xSelecione + 100, 700, larguraMorto - 40, 60};
+            Rectangle iniciaJogo = {xSelecione + 95, 400, larguraMorto - 60, 60};
+            Rectangle configs = {xSelecione + 95, 500, larguraMorto + 40, 60};           
+            Rectangle ranking = {xSelecione + 95, 600, larguraMorto - 160, 60};
+            Rectangle sairJogo = {xSelecione + 95, 700, larguraMorto - 40, 60};
+
+            DrawRectangleRounded(iniciaJogo, 0.1, 1, DARKGRAY);
+            DrawRectangleRounded(configs, 0.1, 1, DARKGRAY);
+            DrawRectangleRounded(ranking, 0.1, 1, DARKGRAY);
+            DrawRectangleRounded(sairJogo, 0.1, 1, DARKGRAY);
 
             DrawText("BEM VINDO AO DKINF!", xSelecione + 25, 100, 60, RED);
             DrawText("OPÇÕES:", xMorto + 100, 200, 60, RED);
@@ -81,15 +90,15 @@ int main(){
             DrawText("SAIR DO JOGO", xSelecione + 100, 700, 60, CheckCollisionPointRec(GetMousePosition(), sairJogo) ? RED : WHITE);
 
             if(dificuldade == FACIL) // Define a velocidade dos inimigos dependendo da dificuldade
-                velocidadeInimigo = 2.0f;
+                velocidadeInimigo = 3.0f;
             if(dificuldade == NORMAL)
-                velocidadeInimigo = 3.5f;
+                velocidadeInimigo = 4.0f;
             if(dificuldade == DIFICIL)
                 velocidadeInimigo = 6.0f;
 
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                     if (CheckCollisionPointRec(GetMousePosition(), iniciaJogo)){              
-                        reiniciarJogo(&mapa, &mario, inimigo, &numInimigos, &dificuldade);                    
+                        reiniciarJogo(&mapa, &mario, inimigo, &numInimigos, &dificuldade, &estado);                    
                         estado = JOGANDO;}
                     if (CheckCollisionPointRec(GetMousePosition(), configs)) estado = CONFIGS;
                     if (CheckCollisionPointRec(GetMousePosition(), ranking)) estado = RANKING;
@@ -117,9 +126,9 @@ int main(){
         sprintf(texto, "VIDAS: %d", mario.vidas);
         DrawText(texto, 10, 10, 30, RED);
     
-        Inimigos(&mapa, &mario, inimigo, &numInimigos, &tempoInvencivel);
+        Inimigos(&mapa, &mario, inimigo, &numInimigos, &tempoInvencivel, &dificuldade, &numrandom);
         movimento(&mario, &mapa);
-        proximafase(&mapa, &mario, inimigo, &numInimigos, &faseAtual, numMapa);
+        proximafase(&mapa, &mario, inimigo, &numInimigos, &faseAtual, numMapa, &estado);
     
         DesenharMapa(&mapa);  
         DrawRectangle(mario.x, mario.y, mario.tamanho, mario.tamanho, BLUE);
@@ -173,7 +182,7 @@ int main(){
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 if (CheckCollisionPointRec(GetMousePosition(), reiniciaJogo)){                     
-                reiniciarJogo(&mapa, &mario, inimigo, &numInimigos, &dificuldade);
+                reiniciarJogo(&mapa, &mario, inimigo, &numInimigos, &dificuldade, &estado);
                 estado = JOGANDO;}
                 if (CheckCollisionPointRec(GetMousePosition(), menu2)) {mario.ativo = true; estado = MENU;}
                 if (CheckCollisionPointRec(GetMousePosition(), vazaJogo2)) CloseWindow();
@@ -246,6 +255,15 @@ int main(){
 
         case RANKING:
             ClearBackground(RAYWHITE);
+        break;
+
+        case VITORIA:
+          ClearBackground(BLACK);
+          DrawText("VOCÊ VENCEU", 80, ALTURA_TELA/2 - 80, 100, RED);
+          DrawText("CLIQUE QUALQUER TECLA PARA IR AO MENU", 220, 480, 20, RED);
+          if (GetKeyPressed() > 0){
+            estado = MENU;
+          }
         break;
         
     }   
@@ -331,11 +349,11 @@ void movimento(Jogador *p, Mapa *mapa) {
     
 }
 
-void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, int *numInimigos){
+void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, int *numInimigos, EstadosJogo *estado){
     FILE *file = fopen(arquivo, "r"); //Abre o arquivo txt
 
-    if (file == NULL) { // Previne erros 
-    printf("Erro ao abrir o arquivo %s\n", arquivo);
+    if (file == NULL) { 
+    *estado = VITORIA;
     return;}
 
     char c;
@@ -368,6 +386,7 @@ void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, i
             inimigo[*numInimigos].y = ((linha + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
             inimigo[*numInimigos].direcao = 1;
             inimigo[*numInimigos].ativo = true;
+            inimigo[*numInimigos].numrand = 1;
             (*numInimigos)++; // Fundamental para a leitura do array de inimigos 
          }
     }
@@ -406,19 +425,34 @@ void DesenharMapa(Mapa *mapa){
     }
 }
 
-void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel){
+void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel, Dificuldade *dif, int *numrand){
 
 for (int i = 0; i < *numInimigos; i++) {
-    int MgridLinha  = (int)(inimigo[i].y + TAMANHO_JOGADOR) / TAMANHO_BLOCOS;
-    int MgridColunaMeio = (int)(inimigo[i].x + (TAMANHO_JOGADOR/2)) / TAMANHO_BLOCOS;
+float proximoX = inimigo[i].x + velocidadeInimigo * inimigo[i].direcao * inimigo[i].numrand;
+int gridLinhaFuturo  = (int)(inimigo[i].y + TAMANHO_JOGADOR) / TAMANHO_BLOCOS;
+int gridColunaFuturo = (int)(proximoX + (TAMANHO_JOGADOR / 2)) / TAMANHO_BLOCOS;
 
-if(mapa->grid[MgridLinha][MgridColunaMeio] == 'Z' || mapa->grid[MgridLinha][MgridColunaMeio] == 'H'){ // Se os inimigos estao sob a plataforma, eles podem andar 
-    inimigo[i].x += velocidadeInimigo * inimigo[i].direcao; // Multiplica a direcao para que eles mudem de lado (1, -1)
+if(*dif == DIFICIL){
+    if (rand() % 150 == 0) 
+    inimigo[i].numrand *= -1;
+
+    if (mapa->grid[gridLinhaFuturo][gridColunaFuturo] == 'Z' || mapa->grid[gridLinhaFuturo][gridColunaFuturo] == 'H') {
+        inimigo[i].x = proximoX;
+    } else {
+        inimigo[i].direcao *= -1;
+        inimigo[i].numrand = 1;
+    }
+} 
+else{
+    if (mapa->grid[gridLinhaFuturo][gridColunaFuturo] == 'Z' || mapa->grid[gridLinhaFuturo][gridColunaFuturo] == 'H'){
+        inimigo[i].x += velocidadeInimigo * inimigo[i].direcao;
+    } 
+    else {
+        inimigo[i].direcao *= -1;
+        inimigo[i].x += velocidadeInimigo * inimigo[i].direcao;
+    }
 }
-else{ //Se sai da plataforma, muda de direcao
-    inimigo[i].direcao *= -1;  
-    inimigo[i].x += velocidadeInimigo * inimigo[i].direcao; // Se nao tiver isso ele fica parado, pois só muda de direcao ainda fora da plataforma
-}
+
 if (inimigo[i].x < 0) {inimigo[i].x = 0; inimigo[i].direcao *= -1;} // Esses dois if nao deixam que visualmente os inimigos saiam da tela
 if (inimigo[i].x > LARGURA_TELA - TAMANHO_JOGADOR){inimigo[i].x = LARGURA_TELA - TAMANHO_JOGADOR; inimigo[i].direcao *= -1;} 
 
@@ -430,11 +464,10 @@ if(CheckCollisionRecs(player, opps) && (*invencivel) <= 0){  // Tira uma vida do
     j->vidas -= 1;
 }
 if(j->vidas == 0){ // Se nao tem mais vidas, morre
-    j->ativo = false;
-}
-}}
+j->ativo = false;
+}}}
 
-void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade) {
+void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade, EstadosJogo *estados) {
     *numInimigos = 0; // Zera tudo para nada duplicar
     *jogador = (Jogador){0};
     jogador->tamanho = TAMANHO_JOGADOR;
@@ -445,18 +478,18 @@ void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigo
     jogador->vidas = 2;
     if(*dificuldade == DIFICIL)
     jogador->vidas = 1;
-    LerMapa(mapa, jogador, "mapa1.txt", inimigos, numInimigos); // Refaz o primeiro mapa 
+    LerMapa(mapa, jogador, "mapa1.txt", inimigos, numInimigos, estados); // Refaz o primeiro mapa 
 }
 
-void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa) {
+void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa, EstadosJogo *estados) {
     
     int gridLinhaMeio = (int)(jog->y + (TAMANHO_JOGADOR / 2)) / TAMANHO_BLOCOS;
     int gridColunaMeio = (int)(jog->x + (TAMANHO_JOGADOR/2)) / TAMANHO_BLOCOS;
     
     if(mapa->grid[gridLinhaMeio][gridColunaMeio] == 'F'){
-    *numInimigos = 0;
+    *numInimigos = 0;   
     *mapa = (Mapa){0};
     (*faseAtual)++;
     sprintf(numMapa, "mapa%d.txt", *faseAtual); // Muda o numero do mapa de acordo com a variavel faseAtual, que aumenta se tu passa de nivel
-    LerMapa(mapa, jog, numMapa, inimigos, numInimigos);
+    LerMapa(mapa, jog, numMapa, inimigos, numInimigos, estados);
 }}
