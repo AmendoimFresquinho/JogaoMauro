@@ -20,6 +20,7 @@ typedef struct {
     float y;
     int direcao;
     bool ativo;
+    int numrand;
 } Opps;
 
 typedef enum {
@@ -28,7 +29,8 @@ typedef enum {
     PAUSADO,    
     MORTO,  
     CONFIGS,
-    RANKING
+    RANKING,
+    VITORIA
 } EstadosJogo;
 
 typedef enum{
@@ -49,6 +51,7 @@ typedef enum{
 #define VELOCIDADE_ESCADA 30.0f
 #define VELOCIDADE_OPPS 3
 #define VELOCIDADE_OPPS_DIFICIL 6
+#define MAX_INIMIGOS 40
 
 //Definições do mapa
 
@@ -66,11 +69,11 @@ void movimento(Jogador *p, Mapa *mapa);
 
 //Funções do Mapa
 
-void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, int *numInimigos);
+void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, int *numInimigos, EstadosJogo* estado);
 void DesenharMapa(Mapa *mapa);
-void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel);
-void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade);
-void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa);
+void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel, Dificuldade* dificuldade, int* numrandom);
+void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade, EstadosJogo* estado);
+void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa, EstadosJogo* estado);
 void andar(Jogador *p);
 void pular(Jogador* p);
 void mover(Jogador *p, Mapa* mapa);
@@ -78,4 +81,6 @@ void zerarJogador(Jogador* j);
 void subirEscada(CorpoFisico *cf, Mapa *mapa);
 
 #endif
+
+
 
