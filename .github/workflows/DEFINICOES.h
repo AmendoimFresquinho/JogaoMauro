@@ -2,13 +2,7 @@
 #define DEFINICOES_H
 #include "raylib.h"
 #include <stdbool.h>
-
-    // Struct de um corpo físico
-typedef struct {
-    float posX, posY;
-    float velX, velY;
-    float massa
-} CorpoFisico;
+#include "corpoFisico.h"
 
     //Struct jogador
 typedef struct {
@@ -50,7 +44,7 @@ typedef enum{
 #define VELOCIDADE 4.0f
 #define TAMANHO_JOGADOR 20
 #define GRAVIDADE 0.5f   
-#define FORCA_PULO -7.0f  
+#define FORCA_PULO -20.0f  
 #define LINHA_DO_CHAO 500  
 #define VELOCIDADE_ESCADA 30.0f
 #define VELOCIDADE_OPPS 3
@@ -77,6 +71,11 @@ void DesenharMapa(Mapa *mapa);
 void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel);
 void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade);
 void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa);
-
+void andar(Jogador *p);
+void pular(Jogador* p);
+void mover(Jogador *p, Mapa* mapa);
+void zerarJogador(Jogador* j);
+void subirEscada(CorpoFisico *cf, Mapa *mapa);
 
 #endif
+
