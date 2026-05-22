@@ -19,6 +19,10 @@ int main(){
     EstadosJogo estado = MENU;
 
     mario.tamanho = TAMANHO_JOGADOR;
+    mario.aceleracao = 5;
+    mario.corpoFisico = criarCorpoFisico();
+    mario.corpoFisico.raio = mario.tamanho/2;
+    mario.corpoFisico.massa = 10;
     char numMapa[20]; 
     Color cortexto1 = WHITE;
     Color cortexto2 = RED;
@@ -131,7 +135,7 @@ int main(){
         proximafase(&mapa, &mario, inimigo, &numInimigos, &faseAtual, numMapa, &estado);
     
         DesenharMapa(&mapa);  
-        DrawRectangle(mario.x, mario.y, mario.tamanho, mario.tamanho, BLUE);
+        DrawRectangle(mario.corpoFisico.posX - mario.corpoFisico.raio, mario.corpoFisico.posY - mario.corpoFisico.raio, mario.tamanho, mario.tamanho, BLUE);
        
         for (int i = 0; i < numInimigos; i++) {
             if (inimigo[i].ativo) {
@@ -274,79 +278,51 @@ CloseWindow();
 return 0;}
 
 void movimento(Jogador *p, Mapa *mapa) {
-    
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
-        p->x += VELOCIDADE;
-    }
-    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
-        p->x -= VELOCIDADE;
-    }
-    if (IsKeyPressed(KEY_SPACE) && p->noChao == true) {
-        p->velocidadeY = FORCA_PULO;
+    CorpoFisico* cf = &(p->corpoFisico);
+    andar(p);
+    aplicarGravidade(cf);
+    aplicarForcasMitigantes(cf, p->noChao);
+    pular(p);
+    mover(p, mapa);
+    subirEscada(cf, mapa);
+}
+void andar(Jogador *p){
+    float tmp = ((IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))) * p->aceleracao;
+    p->corpoFisico.velX += p->noChao? tmp : tmp * razaoArChao; // Caso esteja no chão, acelerará normalmente. Se estiver no ar, irá parecer normal mas na verdade tem menos impacto
+}
+void pular(Jogador *p){
+    if (IsKeyPressed(KEY_SPACE) && p->noChao) {
+        p->corpoFisico.velY += p->forcaPulo;
         p->noChao = false;
-    }
-
-    p->velocidadeY += GRAVIDADE;
-    p->y += p->velocidadeY;
-
-    int gridLinha  = (int)(p->y + TAMANHO_JOGADOR) / TAMANHO_BLOCOS;
-    int gridColuna = (int)(p->x + (TAMANHO_JOGADOR/2)) / TAMANHO_BLOCOS;
-    int gridLinhaMeio = (int)(p->y + (TAMANHO_JOGADOR / 2)) / TAMANHO_BLOCOS;
-    int gridColunaMeio = (int)(p->x + (TAMANHO_JOGADOR/2)) / TAMANHO_BLOCOS;
-    int gridLinhaCima = (int)(p->y) / TAMANHO_BLOCOS;
-    int gridColunaCima = (int)(p->x + (TAMANHO_JOGADOR/2)) / TAMANHO_BLOCOS;
-    
-    // Deixa ele ficar no chao
-
-    if(gridLinha >= 0 && gridLinha < LINHAS && gridColuna >= 0 && gridColuna < COLUNAS && (mapa->grid[gridLinha][gridColuna] == 'Z' || (mapa->grid[gridLinha][gridColuna] == 'H' && mapa->grid[gridLinhaMeio][gridColunaMeio] == 'D'))) {
-        p->y = (gridLinha * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
-        p->noChao = true;
-        p->velocidadeY = 0.0f;
-    } 
-    else {
-        p->noChao = false;
-    }
-
-   // Não deixa ele atravessar o teto
-
-     if (gridLinhaCima >= 0 && gridLinhaCima < LINHAS && gridColunaCima >= 0 && gridColunaCima < COLUNAS && mapa->grid[gridLinhaCima][gridColunaCima] == 'Z') {
-        p->y = (gridLinhaCima + 1) * TAMANHO_BLOCOS; 
-        p->velocidadeY = 0.0f;} 
-
-    
-    //Não deixa ele sair da tela
-
-    if (p->y > ALTURA_TELA - TAMANHO_JOGADOR) p->ativo = false;
-    if (p->y < 0) p->y = 0;
-    if (p->x > LARGURA_TELA - TAMANHO_JOGADOR) p->x = LARGURA_TELA - TAMANHO_JOGADOR;
-    if (p->x < 0) p->x = 0;
-
-    // Sobe Escada 
-
-  if (mapa->grid[gridLinhaMeio][gridColunaMeio] == 'S' && (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP))) {
-    for (int l = gridLinhaMeio; l >= 0; l--) {
-        if (mapa->grid[l][gridColunaMeio] == 'D') {
-            p->velocidadeY = 0.0f;
-            p->y = ((l + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR; // deixa o player na altura correta
-            p->noChao = true;
-            break; // Se achou um D nao precisa mais procurar
-        }
-    }
-}   
-
-    // Desce Escada 
-
-   if(mapa->grid[gridLinhaMeio][gridColunaMeio] == 'D' && (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN))){
-    for (int l = gridLinhaMeio; l < LINHAS; l++) {
-        if (mapa->grid[l][gridColunaMeio] == 'S') {
-            p->y = ((l + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR; // deixa o player na altura correta
-            p->velocidadeY = 0.0f;
-            p->noChao = true;
-            break; // Se achou um S nao precisa mais procurar
-        }
     }
 }
-    
+void mover(Jogador *p, Mapa* mapa){
+    testarColisaoY(&(p->corpoFisico), &mapa->grid[0][0], TAMANHO_BLOCOS, COLUNAS, LINHAS, &(p->noChao));
+    testarColisaoX(&(p->corpoFisico), &mapa->grid[0][0], TAMANHO_BLOCOS, COLUNAS);
+}
+void subirEscada(CorpoFisico* cf, Mapa *mapa){
+    if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)){
+        int celX = cf->posX / TAMANHO_BLOCOS;
+        int celY = cf->posY / TAMANHO_BLOCOS;
+        if (mapa->grid[celY][celX] == 'S'){
+            for(int i = 0; i < LINHAS; i++){
+                if (mapa->grid[celY - i][celX] == 'D'){
+                    cf->posY = (celY - i) * TAMANHO_BLOCOS + cf->raio*2;
+                    return;
+                }
+            }
+        }
+    } else if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)){
+        int celX = cf->posX / TAMANHO_BLOCOS;
+        int celY = cf->posY / TAMANHO_BLOCOS;
+        if (mapa->grid[celY][celX] == 'D'){}
+         for(int i = 0; i < LINHAS; i++){
+                if (mapa->grid[celY + i][celX] == 'S'){
+                    cf->posY = (celY + i) * TAMANHO_BLOCOS + cf->raio*2;
+                    return;
+                }
+            }
+    }
 }
 
 void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, int *numInimigos, EstadosJogo *estado){
@@ -374,11 +350,11 @@ void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, i
             mapa->grid[linha][coluna] = c;
 
         if (c == 'P') { // Se é P spawna o player 
-            jogador->x = ((coluna + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
-            jogador->y = ((linha + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
+            jogador->corpoFisico.posX = ((coluna + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
+            jogador->corpoFisico.posY = ((linha + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
             jogador->ativo = true;
             jogador->noChao = false;
-            jogador->velocidadeY = 0.0f;
+            jogador->corpoFisico.velY = 0.0f;
         }
 
         if (c == 'E') { // Se é E spawna os monstros
@@ -470,7 +446,7 @@ j->ativo = false;
 void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade, EstadosJogo *estados) {
     *numInimigos = 0; // Zera tudo para nada duplicar
     *jogador = (Jogador){0};
-    jogador->tamanho = TAMANHO_JOGADOR;
+    zerarJogador(jogador);
     *mapa = (Mapa){0};
     if(*dificuldade == FACIL) // Da as vidas ao jogador dependendo da dificuldade.
     jogador->vidas = 3;
@@ -493,3 +469,12 @@ void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int
     sprintf(numMapa, "mapa%d.txt", *faseAtual); // Muda o numero do mapa de acordo com a variavel faseAtual, que aumenta se tu passa de nivel
     LerMapa(mapa, jog, numMapa, inimigos, numInimigos, estados);
 }}
+void zerarJogador(Jogador* j){
+    j->tamanho = TAMANHO_JOGADOR;
+    j->forcaPulo = FORCA_PULO;
+    j->aceleracao = 3;
+    j->corpoFisico = criarCorpoFisico();
+    j->corpoFisico.raio = j->tamanho/2;
+    j->corpoFisico.massa = 10;
+    j->noChao = false;
+}
