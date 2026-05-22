@@ -5,6 +5,7 @@
 #include <time.h>
 #include<stdlib.h>
 float velocidadeInimigo;
+
 int main(){
     
     InitWindow(LARGURA_TELA, ALTURA_TELA, "DKINF");
@@ -432,7 +433,7 @@ else{
 if (inimigo[i].x < 0) {inimigo[i].x = 0; inimigo[i].direcao *= -1;} // Esses dois if nao deixam que visualmente os inimigos saiam da tela
 if (inimigo[i].x > LARGURA_TELA - TAMANHO_JOGADOR){inimigo[i].x = LARGURA_TELA - TAMANHO_JOGADOR; inimigo[i].direcao *= -1;} 
 
-Rectangle player = {j->x, j->y, TAMANHO_JOGADOR, TAMANHO_JOGADOR}; // Retangulos invisiveis que servem para checar a colisao
+Rectangle player = {j->corpoFisico.posX - j->corpoFisico.raio, j->corpoFisico.posY - j->corpoFisico.raio, TAMANHO_JOGADOR, TAMANHO_JOGADOR}; // Retangulos invisiveis que servem para checar a colisao
 Rectangle opps = {inimigo[i].x, inimigo[i].y, TAMANHO_JOGADOR, TAMANHO_JOGADOR};
  
 if(CheckCollisionRecs(player, opps) && (*invencivel) <= 0){  // Tira uma vida do jogador se toca no inimigo e da um segundo de invencibilidade para ele nao morrer inta
@@ -459,8 +460,8 @@ void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigo
 
 void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa, EstadosJogo *estados) {
     
-    int gridLinhaMeio = (int)(jog->y + (TAMANHO_JOGADOR / 2)) / TAMANHO_BLOCOS;
-    int gridColunaMeio = (int)(jog->x + (TAMANHO_JOGADOR/2)) / TAMANHO_BLOCOS;
+    int gridLinhaMeio = (int)(jog->corpoFisico.posY + (TAMANHO_JOGADOR / 2)) / TAMANHO_BLOCOS;
+    int gridColunaMeio = (int)(jog->corpoFisico.posX + (TAMANHO_JOGADOR/2)) / TAMANHO_BLOCOS;
     
     if(mapa->grid[gridLinhaMeio][gridColunaMeio] == 'F'){
     *numInimigos = 0;   
