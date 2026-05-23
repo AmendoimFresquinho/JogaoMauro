@@ -6,6 +6,9 @@
 #include<stdlib.h>
 float velocidadeInimigo;
 
+
+Texture2D groundTXT, ladderTXT;
+
 int main(){
     
     InitWindow(LARGURA_TELA, ALTURA_TELA, "DKINF");
@@ -32,6 +35,18 @@ int main(){
     int numInimigos = 0, faseAtual = 1, numrandom = 1;
 
     srand(time(NULL));
+
+    // Carrega as texturas
+    Image groundIMG = LoadImage("sprites/ground.png");
+    ImageResize(&groundIMG, 30, 30);
+    groundTXT = LoadTextureFromImage(groundIMG);
+    UnloadImage(groundIMG);
+
+    Image ladderIMG = LoadImage("sprites/ladder.png");
+    ImageResize(&ladderIMG, 30, 30);
+    ladderTXT = LoadTextureFromImage(ladderIMG);
+    UnloadImage(ladderIMG);
+
 
     // Inicializa o primeiro mapa
 
@@ -275,6 +290,10 @@ int main(){
 EndDrawing();
 } 
 
+
+
+UnloadTexture(groundTXT);
+UnloadTexture(ladderTXT);
 CloseWindow();
 return 0;}
 
@@ -382,15 +401,19 @@ void DesenharMapa(Mapa *mapa){
 
             switch (mapa->grid[l][c]) { // Le a matriz e desenha os blocos em seus devidos lugares
                 case 'Z':
-                    DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, LIGHTGRAY);
+                    //DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, LIGHTGRAY);
+                    DrawTexture(groundTXT, x, y, WHITE);
                     break;
                 case 'S':
-                    DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, BROWN);
+                    //DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, BROWN);
+                    DrawTexture(ladderTXT, x, y, WHITE);
                     break;
                 case 'D':
+                DrawTexture(groundTXT, x, y + TAMANHO_BLOCOS, WHITE);
                     break;
                 case 'H':
-                    DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, BROWN);
+                    //DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, BROWN);
+                    DrawTexture(ladderTXT, x, y, WHITE);
                     break;
                 case 'F':
                     DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, GREEN);
