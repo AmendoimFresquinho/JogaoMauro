@@ -79,6 +79,9 @@ void pular(Jogador* p);
 void mover(Jogador *p, Mapa* mapa);
 void zerarJogador(Jogador* j);
 void subirEscada(CorpoFisico *cf, Mapa *mapa);
+void inserirRanking(PLACAR rank[10], char *nome, float tempo);
+void salvarRanking(PLACAR rank[10]);
+void carregarRanking(PLACAR rank[10]);
 
 #endif
 
