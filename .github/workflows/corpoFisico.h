@@ -13,7 +13,7 @@ typedef struct {
 #define CF_GRAVIDADE 1.4f   
 
 #define CF_RESISTENCIA_AR 0.1f
-#define CF_ATRITO_CHAO 0.4f
+#define CF_ATRITO_CHAO 0.4f //0.3f pode ser melhor (testa aí)
 static const float razaoArChao = CF_RESISTENCIA_AR/CF_ATRITO_CHAO;
 
 void testarColisaoX(CorpoFisico *cf, char* gridP, int tamanhoCelula, int sX);
