@@ -53,6 +53,8 @@ int main(){
     sprintf(numMapa, "mapa%d.txt", faseAtual);
     LerMapa(&mapa, &mario, numMapa, inimigo, &numInimigos, &estado);
 
+    carregarRanking(rank);
+
     // Variaveis de tamanho de texto e centralização de texto (puramente visual)
 
     int larguraVoltar = MeasureText("VOLTAR AO JOGO", 20);
@@ -273,8 +275,37 @@ int main(){
 
         //RANKING
 
-        case RANKING:
-            ClearBackground(RAYWHITE);
+         case RANKING:
+
+        Color bronze = { 205, 127, 50, 255 };
+            ClearBackground(BLACK);
+            DrawText("RANKING", (LARGURA_TELA - MeasureText("RANKING", 60)) / 2, 100, 60, RED);
+            DrawRectangle(25, 190, 850, 45, GOLD);
+            DrawRectangle(25, 235 + 5, 850, 45, LIGHTGRAY);
+            DrawRectangle(25, 280 + 10, 850, 45, bronze);
+            DrawRectangle(25, 325+ 15, 850, 45, DARKGRAY);
+            DrawRectangle(25, 370+ 20, 850, 45, DARKGRAY);
+            DrawRectangle(25, 415+ 25, 850, 45, DARKGRAY);
+            DrawRectangle(25, 460+ 30, 850, 45, DARKGRAY);
+            DrawRectangle(25, 505+ 35, 850, 45, DARKGRAY);
+            DrawRectangle(25, 550+ 40, 850, 45, DARKGRAY);
+            DrawRectangle(25, 640, 850, 45, DARKGRAY);
+
+        for (int i = 0; i < 10; i++) {
+            if (rank[i].nome[0] != '\0' && rank[i].tempo != 0) {
+                char nomeDoCara[500];
+                char tempoDemorado[500];
+                sprintf(nomeDoCara, "%d. %s", i + 1, rank[i].nome);
+                sprintf(tempoDemorado,"- %.2f segundos", rank[i].tempo);
+                DrawText(nomeDoCara, 35, 200 + i * 50, 29, BLACK);
+                DrawText(tempoDemorado, MeasureText(nomeDoCara, 29) + 50, 200 + i * 50, 29, LIME);
+        }}
+
+        DrawText("CLIQUE QUALQUER TECLA PARA VOLTAR", 230, 730, 20, RED);
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || GetKeyPressed() > 0) {
+                estado = MENU;
+    }
+    break;
         break;
 
         case VITORIA:
@@ -501,4 +532,36 @@ void zerarJogador(Jogador* j){
     j->corpoFisico.raio = j->tamanho/2;
     j->corpoFisico.massa = 10;
     j->noChao = false;
+}
+void carregarRanking(PLACAR rank[10]) {
+    FILE *f = fopen("placar.bin", "rb");
+    if (f == NULL) return; // arquivo ainda não existe, tudo bem
+    fread(rank, sizeof(PLACAR), 10, f);
+    fclose(f);
+}
+void salvarRanking(PLACAR rank[10]) {
+    FILE *f = fopen("placar.bin", "wb");
+    fwrite(rank, sizeof(PLACAR), 10, f);
+    fclose(f);
+}
+void inserirRanking(PLACAR rank[10], char *nome, float tempo) {
+    // acha a posição correta (menor tempo = melhor)
+    int pos = -1;
+    for (int i = 0; i < 10; i++) {
+        if (rank[i].tempo == 0 || tempo < rank[i].tempo) {
+            pos = i;
+            break;
+        }
+    }
+    if (pos == -1) return; // não entrou no top 10
+
+    // empurra os piores pra baixo
+    for (int i = 9; i > pos; i--) {
+        rank[i] = rank[i-1];
+    }
+
+    // insere na posição correta
+    strncpy(rank[pos].nome, nome, 30);
+    rank[pos].tempo = tempo;
+    salvarRanking(rank);
 }
