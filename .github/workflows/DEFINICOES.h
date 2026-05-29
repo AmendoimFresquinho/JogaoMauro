@@ -45,12 +45,7 @@ typedef enum{
 #define ALTURA_TELA 900
 #define VELOCIDADE 4.0f
 #define TAMANHO_JOGADOR 20
-#define GRAVIDADE 0.5f   
 #define FORCA_PULO -20.0f  //-15.0f pode ser melhor (testa aí)
-#define LINHA_DO_CHAO 500  
-#define VELOCIDADE_ESCADA 30.0f
-#define VELOCIDADE_OPPS 3
-#define VELOCIDADE_OPPS_DIFICIL 6
 #define MAX_INIMIGOS 40
 
 //Definições do mapa
