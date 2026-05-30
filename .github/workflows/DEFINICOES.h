@@ -82,6 +82,14 @@ void subirEscada(CorpoFisico *cf, Mapa *mapa);
 void inserirRanking(PLACAR rank[10], char *nome, float tempo);
 void salvarRanking(PLACAR rank[10]);
 void carregarRanking(PLACAR rank[10]);
+void caseMenu(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, int *faseAtual, double *tempoInicio, double *tempoFinal, Sound fx2, Sound fx3, Sound fx6);
+void caseJogando(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, float *tempoInvencivel, int *faseAtual, char *numMapa, double *tempoInicio, double *tempoFinal, int *numrandom, Sound fx, Sound fx4, Sound fx5, Sound fx6);
+void casePausado(EstadosJogo *estado, Sound fx2, Sound fx6);
+void caseMorto(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, int *faseAtual, double *tempoInicio, double *tempoFinal, Sound fx2, Sound fx3local);
+void caseConfigs(EstadosJogo *estado, Dificuldade *dificuldade, Color *cortexto1, Color *cortexto2, Color *cortexto3, Sound fx2);
+void caseRanking(EstadosJogo *estado, PLACAR rank[10]);
+void caseVitoria(EstadosJogo *estado, PLACAR rank[10], double *tempoFinal, char *nomeJogador, int *letraNome, Sound fx6);
+void powerUp(Jogador *j, Mapa *mapa, Sound fx7);
 
 #endif
 
