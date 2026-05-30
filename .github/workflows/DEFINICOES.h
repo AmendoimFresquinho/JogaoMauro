@@ -39,6 +39,11 @@ typedef enum{
     DIFICIL
 } Dificuldade;
 
+typedef struct {
+    char nome[30];
+    float tempo;
+} PLACAR;
+
 //Definições
 
 #define LARGURA_TELA 900
