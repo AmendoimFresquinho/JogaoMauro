@@ -3,16 +3,19 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
-#include<stdlib.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
 float velocidadeInimigo;
-
-Texture2D groundTXT, ladderTXT;
-Sound fx, fx2, fx3, fx4, fx5, fx6, fx7;
+Texture2D groundTXT, ladderTXT, FUNDOTXT;
+Sound Pular, Clique, Morrer, Dano, LevelUp, Andar, Poder;
+Font Menu, Titulo, Letra_pequena;
 
 int main(){
 
     InitWindow(LARGURA_TELA, ALTURA_TELA, "DKINF");
     SetTargetFPS(60);
+    
     // Inicia as structs zeradas (para evitar lixo de memória) ou no "default"
 
     Jogador mario = {0};
@@ -22,18 +25,18 @@ int main(){
     EstadosJogo estado = MENU;
 
     mario.tamanho = TAMANHO_JOGADOR;
-    mario.aceleracao = 5;
+    mario.aceleracao = ACELERACAO;
     mario.corpoFisico = criarCorpoFisico();
-    mario.corpoFisico.raio = mario.tamanho / 2;
-    mario.corpoFisico.massa = 10;
+    mario.corpoFisico.raio = TAMANHO_JOGADOR / 2;
+    mario.corpoFisico.massa = MASSA;
     char numMapa[20];
     Color cortexto1 = WHITE;
-    Color cortexto2 = RED;
+    Color cortexto2 = GRAY;
     Color cortexto3 = WHITE;
-    float tempoInvencivel = 2.0f;
+    float tempoInvencivel = TEMPO_INVENCIVEL;
     int numInimigos = 0, faseAtual = 1, numrandom = 1, letraNome = 0;
-    double tempoInicio = 0, tempoFinal = 0;
-    char nomeJogador[31] = {};
+    double tempoInicio = 0, tempoFinal = 0, tempoPausado = 0;
+    char nomeJogador[21] = {};
     PLACAR rank[10] = {};
 
     srand(time(NULL));
@@ -47,26 +50,36 @@ int main(){
 
     // Carrega as texturas
     Image groundIMG = LoadImage("Sprites/ground.png");
-    ImageResize(&groundIMG, 30, 30);
+    ImageResize(&groundIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
     groundTXT = LoadTextureFromImage(groundIMG);
     UnloadImage(groundIMG);
 
     Image ladderIMG = LoadImage("Sprites/ladder.png");
-    ImageResize(&ladderIMG, 30, 30);
+    ImageResize(&ladderIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
     ladderTXT = LoadTextureFromImage(ladderIMG);
     UnloadImage(ladderIMG);
 
+    Image fundoIMG = LoadImage("Sprites/jogo.png");
+    ImageResize(&fundoIMG, LARGURA_TELA + 10, ALTURA_TELA);
+    FUNDOTXT = LoadTextureFromImage(fundoIMG);
+    UnloadImage(fundoIMG);
+
+    Font Menu = LoadFontEx("Fontes/menu.ttf", 60, 0, 0);
+    Font Menu_Maior = LoadFontEx("Fontes/menu.ttf", 100, 0, 0);
+    Font Titulo = LoadFontEx("Fontes/titulo.ttf", 150, 0, 0);
+    Font Letra_pequena = LoadFontEx("Fontes/Pequena.otf", 40, 0, 0);
+
     InitAudioDevice();
-    Sound fx = LoadSound("Sons/Pulo.wav");
-    SetSoundVolume(fx, 0.1f);
-    Sound fx2 = LoadSound("Sons/Click.wav");
-    Sound fx3 = LoadSound("Sons/Morreu.mp3");
-    Sound fx4 = LoadSound("Sons/Dano.wav");
-    Sound fx5 = LoadSound("Sons/LevelUp.wav");
-    SetSoundVolume(fx5, 0.3f);
-    Sound fx6 = LoadSound("Sons/Andar.mp3");
-    SetSoundVolume(fx6, 1.3f);
-    Sound fx7 = LoadSound("Sons/Power.wav");
+    Sound Pular = LoadSound("Sons/Pulo.wav");
+    SetSoundVolume(Pular, 0.1f);
+    Sound Clique = LoadSound("Sons/Click.wav");
+    Sound Morrer = LoadSound("Sons/Morreu.mp3");
+    Sound Dano = LoadSound("Sons/Dano.wav");
+    Sound LevelUp = LoadSound("Sons/LevelUp.wav");
+    SetSoundVolume(LevelUp, 0.3f);
+    Sound Andar = LoadSound("Sons/Andar.mp3");
+    SetSoundVolume(Andar, 1.3f);
+    Sound Poder = LoadSound("Sons/Power.wav");
     
     // Variaveis de tamanho de texto e centralização de texto (puramente visual)
 
@@ -94,38 +107,42 @@ int main(){
 
         switch (estado){
         case MENU:
-            caseMenu(&estado, &mapa, &mario, inimigo, &numInimigos, &dificuldade, &faseAtual, &tempoInicio, &tempoFinal, fx2, fx3, fx6);
+            caseMenu(&estado, &mapa, &mario, inimigo, &numInimigos, &dificuldade, &faseAtual, &tempoInicio, &tempoFinal, Clique, Morrer, Andar, Menu, Titulo);
             break;
         case JOGANDO:
-            caseJogando(&estado, &mapa, &mario, inimigo, &numInimigos, &dificuldade, &tempoInvencivel, &faseAtual, numMapa, &tempoInicio, &tempoFinal, &numrandom, fx, fx4, fx5, fx6);
-            powerUp(&mario, &mapa, fx7);
+            caseJogando(&estado, &mapa, &mario, inimigo, &numInimigos, &dificuldade, &tempoInvencivel, &faseAtual, numMapa, &tempoInicio, &tempoFinal, &numrandom, Pular, Dano, LevelUp, Andar, &tempoPausado);
+            powerUp(&mario, &mapa, Poder);
+            char TEMPOAGORA[50];
+            sprintf(TEMPOAGORA, "TEMPO: %.2f", GetTime() - tempoInicio);
+            DrawText(TEMPOAGORA, 10, 50, 30, BLUE);
             break;
         case PAUSADO:
-            casePausado(&estado, fx2, fx6);
+            casePausado(&estado, Clique, Andar, &tempoPausado, &tempoInicio, Titulo, Menu);
             break;
         case MORTO:
-            caseMorto(&estado, &mapa, &mario, inimigo, &numInimigos, &dificuldade, &faseAtual, &tempoInicio, &tempoFinal, fx2, fx3);
+            caseMorto(&estado, &mapa, &mario, inimigo, &numInimigos, &dificuldade, &faseAtual, &tempoInicio, &tempoFinal, Clique, Morrer);
             break;
         case CONFIGS:
-            caseConfigs(&estado, &dificuldade, &cortexto1, &cortexto2, &cortexto3, fx2);
+            caseConfigs(&estado, &dificuldade, &cortexto1, &cortexto2, &cortexto3, Clique, Menu_Maior, Titulo);
             break;
         case RANKING:
-            caseRanking(&estado, rank);
+            caseRanking(&estado, rank, Clique, Titulo, Letra_pequena);
             break;
         case VITORIA:
-            caseVitoria(&estado, rank, &tempoFinal, nomeJogador, &letraNome, fx6);
+            caseVitoria(&estado, rank, &tempoFinal, nomeJogador, &letraNome, Andar, Letra_pequena);
             break;
         }
 
         EndDrawing();
     }
-    UnloadSound(fx);
-    UnloadSound(fx2);
-    UnloadSound(fx3);
-    UnloadSound(fx4);
-    UnloadSound(fx5);
-    UnloadSound(fx6);
-    UnloadSound(fx7);
+    UnloadSound(Pular);
+    UnloadSound(Clique);
+    UnloadSound(Morrer);
+    UnloadSound(Dano);
+    UnloadSound(LevelUp);
+    UnloadSound(Andar);
+    UnloadSound(Poder);
+    UnloadFont(Menu);
 
     CloseAudioDevice();
     CloseWindow();
@@ -133,143 +150,7 @@ int main(){
     return 0;
 }
 
-void movimento(Jogador *p, Mapa *mapa, Sound fx){
-    CorpoFisico *cf = &(p->corpoFisico);
-    andar(p);
-    aplicarGravidade(cf);
-    aplicarForcasMitigantes(cf, p->noChao);
-    pular(p, fx);
-    mover(p, mapa);
-    subirEscada(cf, mapa);
-}
-void andar(Jogador *p){
-    float tmp = ((IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))) * p->aceleracao;
-    p->corpoFisico.velX += p->noChao ? tmp : tmp * razaoArChao; // Caso esteja no chão, acelerará normalmente. Se estiver no ar, irá parecer normal mas na verdade tem menos impacto
-}
-void pular(Jogador *p, Sound fx){
-    if (IsKeyPressed(KEY_SPACE) && p->noChao){
-        p->corpoFisico.velY += p->forcaPulo;
-        p->noChao = false;
-        PlaySound(fx);
-    }
-}
-void mover(Jogador *p, Mapa *mapa){
-    testarColisaoY(&(p->corpoFisico), &mapa->grid[0][0], TAMANHO_BLOCOS, COLUNAS, LINHAS, &(p->noChao));
-    testarColisaoX(&(p->corpoFisico), &mapa->grid[0][0], TAMANHO_BLOCOS, COLUNAS);
-}
-void subirEscada(CorpoFisico *cf, Mapa *mapa){
-    if ((IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) && !IsKeyDown(KEY_SPACE)){
-        int celX = cf->posX / TAMANHO_BLOCOS;
-        int celY = cf->posY / TAMANHO_BLOCOS;
-        if (mapa->grid[celY][celX] == 'S'){
-            for (int i = 0; i < LINHAS; i++){
-                if (mapa->grid[celY - i][celX] == 'D'){
-                    cf->posY = (celY - i) * TAMANHO_BLOCOS + cf->raio * 2;
-                    return;
-                }
-            }
-        }
-    }
-    else if ((IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) && !IsKeyDown(KEY_SPACE)){
-        int celX = cf->posX / TAMANHO_BLOCOS;
-        int celY = cf->posY / TAMANHO_BLOCOS;
-        if (mapa->grid[celY][celX] == 'D'){
-        }
-        for (int i = 0; i < LINHAS; i++){
-            if (mapa->grid[celY + i][celX] == 'S'){
-                cf->posY = (celY + i) * TAMANHO_BLOCOS + cf->raio * 2;
-                return;
-            }
-        }
-    }
-}
-
-void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, int *numInimigos, EstadosJogo *estado){
-    FILE *file = fopen(arquivo, "r"); //Abre o arquivo txt
-
-    if (file == NULL) { 
-    *estado = VITORIA;
-    return;}
-
-    char c;
-    int linha = 0, coluna = 0;
-        
-    while((c = fgetc(file)) != EOF){ // Vai pegando os caracteres do arquivo e colocando na matriz 
-
-        if(c == '\r'){
-            continue; //deixar windows proof
-        }
-        else if(c == '\n'){
-            linha++; 
-            coluna = 0; 
-        }
-        else{
-            
-        if (linha < LINHAS && coluna < COLUNAS) {
-            mapa->grid[linha][coluna] = c;
-
-        if (c == 'P') { // Se é P spawna o player 
-            jogador->corpoFisico.posX = ((coluna + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
-            jogador->corpoFisico.posY = ((linha + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
-            jogador->ativo = true;
-            jogador->noChao = false;
-            jogador->corpoFisico.velY = 0.0f;
-        }
-
-        if (c == 'E') { // Se é E spawna os monstros
-            inimigo[*numInimigos].x = ((coluna + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
-            inimigo[*numInimigos].y = ((linha + 1) * TAMANHO_BLOCOS) - TAMANHO_JOGADOR;
-            inimigo[*numInimigos].direcao = 1;
-            inimigo[*numInimigos].ativo = true;
-            inimigo[*numInimigos].numrand = 1;
-            (*numInimigos)++; // Fundamental para a leitura do array de inimigos 
-         }
-    }
-
-    coluna++;
-    }
-}
-fclose(file);
-}
-
-void DesenharMapa(Mapa *mapa){
-    for (int l = 0; l < LINHAS; l++){
-        for (int c = 0; c < COLUNAS; c++){
-            int x = c * TAMANHO_BLOCOS;
-            int y = l * TAMANHO_BLOCOS;
-
-            switch (mapa->grid[l][c]){ // Le a matriz e desenha os blocos em seus devidos lugares
-            case 'Z':
-                // DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, LIGHTGRAY);
-                DrawTexture(groundTXT, x, y, WHITE);
-                break;
-            case 'S':
-                // DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, BROWN);
-                DrawTexture(ladderTXT, x, y, WHITE);
-                break;
-            case 'D':
-                DrawTexture(groundTXT, x, y + TAMANHO_BLOCOS, WHITE);
-                break;
-            case 'H':
-                // DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, BROWN);
-                DrawTexture(ladderTXT, x, y, WHITE);
-                break;
-            case 'F':
-                DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, GREEN);
-                break;
-            case 'K':
-                DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, YELLOW);
-                break;
-            case 'V':
-                DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, PINK);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-}
-void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel, Dificuldade *dif, int *numrand, Sound fx4){
+void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel, Dificuldade *dif, int *numrand, Sound Dano){
     for (int i = 0; i < *numInimigos; i++){
         float proximoX = inimigo[i].x + velocidadeInimigo * inimigo[i].direcao * inimigo[i].numrand;
         int gridLinhaFuturo = (int)(inimigo[i].y + TAMANHO_JOGADOR) / TAMANHO_BLOCOS;
@@ -310,11 +191,10 @@ void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *in
         Rectangle opps = {inimigo[i].x, inimigo[i].y, TAMANHO_JOGADOR, TAMANHO_JOGADOR};
 
         if (CheckCollisionRecs(player, opps) && (*invencivel) <= 0){ // Tira uma vida do jogador se toca no inimigo e da um segundo de invencibilidade para ele nao morrer inta
-            *invencivel += 1.0f;
+            *invencivel += TEMPO_INVENCIVEL;
             j->vidas -= 1;
-            if (j->vidas > 0)
-            {
-                PlaySound(fx4);
+            if (j->vidas > 0){
+                PlaySound(Dano);
             }
         }
         if (j->vidas == 0){ // Se nao tem mais vidas, morre
@@ -323,165 +203,136 @@ void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *in
     }
 }
 
-void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade, EstadosJogo *estados) {
+void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade, EstadosJogo *estados, double *tempoFinal, double *tempoInicio){
     *numInimigos = 0; // Zera tudo para nada duplicar
     *jogador = (Jogador){0};
-    zerarJogador(jogador);
+    zerarJogador(jogador, dificuldade);
     *mapa = (Mapa){0};
-    if(*dificuldade == FACIL) // Da as vidas ao jogador dependendo da dificuldade.
-    jogador->vidas = 3;
-    if(*dificuldade == NORMAL)
-    jogador->vidas = 2;
-    if(*dificuldade == DIFICIL)
-    jogador->vidas = 1;
-    LerMapa(mapa, jogador, "mapa1.txt", inimigos, numInimigos, estados); // Refaz o primeiro mapa 
+    if (*dificuldade == FACIL) // Da as vidas ao jogador dependendo da dificuldade.
+        jogador->vidas = VIDAS_FACIL;
+    if (*dificuldade == NORMAL)
+        jogador->vidas = VIDAS_MEDIO;
+    if (*dificuldade == DIFICIL)
+        jogador->vidas = VIDAS_DIFICIL;
+    LerMapa(mapa, jogador, "mapa1.txt", inimigos, numInimigos, estados, tempoInicio, tempoFinal); // Refaz o primeiro mapa
 }
 
-void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa, EstadosJogo *estados, double *tempoFinal, double *tempoInicio, Sound fx5, Dificuldade *dificuldade){
+void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa, EstadosJogo *estados, double *tempoFinal, double *tempoInicio, Sound LevelUp, Dificuldade *dificuldade){
 
     int gridLinhaMeio = (int)(jog->corpoFisico.posY + ((TAMANHO_JOGADOR / 2) - 10)) / TAMANHO_BLOCOS;
     int gridColunaMeio = (int)(jog->corpoFisico.posX + ((TAMANHO_JOGADOR / 2) - 10)) / TAMANHO_BLOCOS;
 
     if (mapa->grid[gridLinhaMeio][gridColunaMeio] == 'F'){
         if (*dificuldade == FACIL)
-        velocidadeInimigo = 3.0f;
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_FACIL;
         if (*dificuldade == NORMAL)
-        velocidadeInimigo = 4.0f;
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_MEDIO;
         if (*dificuldade == DIFICIL)
-        velocidadeInimigo = 6.0f;
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_DIFICIL;
         *numInimigos = 0;
         *mapa = (Mapa){0};
         (*faseAtual)++;
-        PlaySound(fx5);
+        PlaySound(LevelUp);
         sprintf(numMapa, "mapa%d.txt", *faseAtual); // Muda o numero do mapa de acordo com a variavel faseAtual, que aumenta se tu passa de nivel
         LerMapa(mapa, jog, numMapa, inimigos, numInimigos, estados, tempoFinal, tempoInicio);
     }
 }
-void zerarJogador(Jogador* j){
+void zerarJogador(Jogador *j, Dificuldade *dificuldade){
     j->tamanho = TAMANHO_JOGADOR;
     j->forcaPulo = FORCA_PULO;
     j->aceleracao = 3;
     j->corpoFisico = criarCorpoFisico();
-    j->corpoFisico.raio = j->tamanho/2;
+    j->corpoFisico.raio = j->tamanho / 2;
     j->corpoFisico.massa = 10;
     j->noChao = false;
+     if (*dificuldade == FACIL)
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_FACIL;
+        if (*dificuldade == NORMAL)
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_MEDIO;
+        if (*dificuldade == DIFICIL)
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_DIFICIL;
 }
-void carregarRanking(PLACAR rank[10]) {
-    FILE *f = fopen("placar.bin", "rb");
-    if (f == NULL) return; // arquivo ainda não existe, tudo bem
-    fread(rank, sizeof(PLACAR), 10, f);
-    fclose(f);
-}
-void salvarRanking(PLACAR rank[10]) {
-    FILE *f = fopen("placar.bin", "wb");
-    fwrite(rank, sizeof(PLACAR), 10, f);
-    fclose(f);
-}
-void inserirRanking(PLACAR rank[10], char *nome, float tempo) {
-    // acha a posição correta (menor tempo = melhor)
-    int pos = -1;
-    for (int i = 0; i < 10; i++) {
-        if (rank[i].tempo == 0 || tempo < rank[i].tempo) {
-            pos = i;
-            break;
-        }
-    }
-    if (pos == -1) return; // não entrou no top 10
-
-    // empurra os piores pra baixo
-    for (int i = 9; i > pos; i--) {
-        rank[i] = rank[i-1];
-    }
-
-    // insere na posição correta
-    strncpy(rank[pos].nome, nome, 30);
-    rank[pos].tempo = tempo;
-    salvarRanking(rank);
-}
-void powerUp(Jogador *j, Mapa *mapa, Sound fx7){
-int gridLinhaMeio = (int)(j->corpoFisico.posY + ((TAMANHO_JOGADOR / 2) - 10)) / TAMANHO_BLOCOS;
-int gridColunaMeio = (int)(j->corpoFisico.posX + ((TAMANHO_JOGADOR / 2) - 10)) / TAMANHO_BLOCOS;
+void powerUp(Jogador *j, Mapa *mapa, Sound Poder){
+    int gridLinhaMeio = (int)(j->corpoFisico.posY + ((TAMANHO_JOGADOR / 2) - 10)) / TAMANHO_BLOCOS;
+    int gridColunaMeio = (int)(j->corpoFisico.posX + ((TAMANHO_JOGADOR / 2) - 10)) / TAMANHO_BLOCOS;
 
     if (mapa->grid[gridLinhaMeio][gridColunaMeio] == 'K'){
-        velocidadeInimigo = 1.0f;
-        PlaySound(fx7);
+        PlaySound(Poder);
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_LENTO;
         mapa->grid[gridLinhaMeio][gridColunaMeio] = ' ';
     }
       if (mapa->grid[gridLinhaMeio][gridColunaMeio] == 'V'){
+        PlaySound(Poder);
         j->vidas++;
-        PlaySound(fx7);
         mapa->grid[gridLinhaMeio][gridColunaMeio] = ' ';
     }
 }
-
-void caseMenu(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, int *faseAtual, double *tempoInicio, double *tempoFinal, Sound fx2, Sound fx3, Sound fx6) {
-ClearBackground(BLACK);
-    StopSound(fx3);
-    StopSound(fx6);
+void caseMenu(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, int *faseAtual, double *tempoInicio, double *tempoFinal, Sound Clique, Sound Morrer, Sound Andar, Font Menu, Font Titulo) {
+    ClearBackground(BLACK);
+    StopSound(Morrer);
+    StopSound(Andar);
     *faseAtual = 1;
-
-    // Calcula tamanhos e posições dos textos
-    int larguraMorto = MeasureText("VOCÊ MORREU, ", 60);
-    int larguraSelecione = MeasureText("SELECIONE UMA OPÇÃO", 60);
-    int xSelecione = (LARGURA_TELA - larguraSelecione) / 2;
-    int xMorto = (LARGURA_TELA - larguraMorto) / 2;
+    DrawTexture(FUNDOTXT, 0, 0, Fade(WHITE, 0.4f));
 
     // Define as áreas clicáveis de cada botão
-    Rectangle iniciaJogo = {xSelecione + 95, 400, larguraMorto - 60, 60};
-    Rectangle configs = {xSelecione + 95, 500, larguraMorto + 40, 60};
-    Rectangle ranking = {xSelecione + 95, 600, larguraMorto - 160, 60};
-    Rectangle sairJogo = {xSelecione + 95, 700, larguraMorto - 40, 60};
+    Rectangle iniciaJogo = {X_MENU_OPCOES - 5, Y_OPCAO_JOGAR, MeasureTextEx(Menu, "INICIAR JOGO", 60, 3.0f).x + 10, 60};
+    Rectangle configs = {X_MENU_OPCOES - 5, Y_OPCAO_CONFIGS, MeasureTextEx(Menu, "CONFIGURACOES", 60, 3.0f).x + 10, 60};
+    Rectangle ranking = {X_MENU_OPCOES - 5, Y_OPCAO_RANKING, MeasureTextEx(Menu, "RANKINGS", 60, 3.0f).x + 10, 60};
+    Rectangle sairJogo = {X_MENU_OPCOES - 5, Y_OPCAO_SAIR, MeasureTextEx(Menu, "SAIR DO JOGO", 60, 3.0f).x + 10, 60};
+    Rectangle titulo = {X_MENU_TITULO - 5, Y_TITULO, MeasureTextEx(Menu, "DKINF", 100, 3.0f).x + 10, 100};
 
-    // Desenha os fundos dos botões
-    DrawRectangleRounded(iniciaJogo, 0.1, 1, DARKGRAY);
-    DrawRectangleRounded(configs, 0.1, 1, DARKGRAY);
-    DrawRectangleRounded(ranking, 0.1, 1, DARKGRAY);
-    DrawRectangleRounded(sairJogo, 0.1, 1, DARKGRAY);
+    if(CheckCollisionPointRec(GetMousePosition(), iniciaJogo))
+        DrawRectangleRec(iniciaJogo, Fade(DARKGRAY, 0.8));
+    else if(CheckCollisionPointRec(GetMousePosition(), configs))
+        DrawRectangleRec(configs, Fade(DARKGRAY, 0.8f));
+    else if(CheckCollisionPointRec(GetMousePosition(), ranking))
+          DrawRectangleRec(ranking, Fade(DARKGRAY, 0.8f));  
+    else if(CheckCollisionPointRec(GetMousePosition(), sairJogo))
+        DrawRectangleRec(sairJogo, Fade(DARKGRAY, 0.8f)); 
 
-    // Desenha os textos — fica vermelho se o mouse estiver em cima
-    DrawText("BEM VINDO AO DKINF!", xSelecione + 25, 100, 60, RED);
-    DrawText("OPÇÕES:", xMorto + 100, 200, 60, RED);
-    DrawText("INICIAR JOGO", xSelecione + 100, 400, 60, CheckCollisionPointRec(GetMousePosition(), iniciaJogo) ? RED : WHITE);
-    DrawText("CONFIGURAÇÕES", xSelecione + 100, 500, 60, CheckCollisionPointRec(GetMousePosition(), configs) ? RED : WHITE);
-    DrawText("RANKINGS", xSelecione + 100, 600, 60, CheckCollisionPointRec(GetMousePosition(), ranking) ? RED : WHITE);
-    DrawText("SAIR DO JOGO", xSelecione + 100, 700, 60, CheckCollisionPointRec(GetMousePosition(), sairJogo) ? RED : WHITE);
+    DrawTextEx(Titulo, "DKINF", (Vector2){ X_MENU_TITULO, Y_TITULO }, 150, 3.0f, WHITE);
+    DrawTextEx(Menu, "INICIAR JOGO", (Vector2){ X_MENU_OPCOES, Y_OPCAO_JOGAR }, 60, 3.0f, CheckCollisionPointRec(GetMousePosition(), iniciaJogo) ? WHITE : LIGHTGRAY);
+    DrawTextEx(Menu, "CONFIGURACOES", (Vector2){ X_MENU_OPCOES, Y_OPCAO_CONFIGS }, 60, 3.0f, CheckCollisionPointRec(GetMousePosition(), configs) ? WHITE : LIGHTGRAY);
+    DrawTextEx(Menu, "RANKINGS", (Vector2){ X_MENU_OPCOES, Y_OPCAO_RANKING }, 60, 3.0f, CheckCollisionPointRec(GetMousePosition(), ranking) ? WHITE : LIGHTGRAY);
+    DrawTextEx(Menu, "SAIR DO JOGO", (Vector2){ X_MENU_OPCOES, Y_OPCAO_SAIR }, 60, 3.0f, CheckCollisionPointRec(GetMousePosition(), sairJogo) ? WHITE : LIGHTGRAY);
 
     // Define a velocidade dos inimigos de acordo com a dificuldade
     if (*dificuldade == FACIL)
-        velocidadeInimigo = 3.0f;
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_FACIL;
     if (*dificuldade == NORMAL)
-        velocidadeInimigo = 4.0f;
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_MEDIO;
     if (*dificuldade == DIFICIL)
-        velocidadeInimigo = 6.0f;
+        velocidadeInimigo = VELOCIDADE_INIMIGOS_DIFICIL;
 
-    // Processa os cliques
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
         if (CheckCollisionPointRec(GetMousePosition(), iniciaJogo)){
             reiniciarJogo(mapa, mario, inimigo, numInimigos, dificuldade, estado, tempoFinal, tempoInicio);
             *tempoInicio = GetTime();
             *tempoFinal = 0;
             *estado = JOGANDO;
-            PlaySound(fx2);}
+            PlaySound(Clique);}
         if (CheckCollisionPointRec(GetMousePosition(), configs)){
-            PlaySound(fx2);
+            PlaySound(Clique);
             *estado = CONFIGS;}
         if (CheckCollisionPointRec(GetMousePosition(), ranking)){
-            PlaySound(fx2);
+            PlaySound(Clique);
             *estado = RANKING;}
         if (CheckCollisionPointRec(GetMousePosition(), sairJogo)){
-            PlaySound(fx2);
+            PlaySound(Clique);
             CloseWindow();}
     }
 }
 
-void caseJogando(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, float *tempoInvencivel, int *faseAtual, char *numMapa, double *tempoInicio, double *tempoFinal, int *numrandom, Sound fx, Sound fx4, Sound fx5, Sound fx6){
+void caseJogando(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, float *tempoInvencivel, int *faseAtual, char *numMapa, double *tempoInicio, double *tempoFinal, int *numrandom, Sound Pular, Sound Dano, Sound LevelUp, Sound Andar, double *tempoPausado){
 
     ClearBackground(BLACK);
-    StopSound(fx3);
+    StopSound(Morrer);
 
     // Pausa com TAB
-    if (IsKeyPressed(KEY_TAB))
+    if (IsKeyPressed(KEY_TAB)) {
+        *tempoPausado = GetTime();
         *estado = PAUSADO;
+    }
 
     // Conta o tempo de invencibilidade após tomar dano
     if (*tempoInvencivel > 0)
@@ -491,12 +342,12 @@ void caseJogando(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo,
 
     // Som de andar
     if (IsKeyDown(KEY_A) || IsKeyDown(KEY_D)){
-        if (!IsSoundPlaying(fx6))
-            PlaySound(fx6);
+        if (!IsSoundPlaying(Andar))
+            PlaySound(Andar);
     }
     else{
-        if (IsSoundPlaying(fx6))
-            StopSound(fx6);
+        if (IsSoundPlaying(Andar))
+            StopSound(Andar);
     }
 
     // HUD de vidas
@@ -505,12 +356,12 @@ void caseJogando(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo,
     DrawText(texto, 10, 10, 30, RED);
 
     // Atualiza lógica
-    Inimigos(mapa, mario, inimigo, numInimigos, tempoInvencivel, dificuldade, numrandom, fx4);
-    movimento(mario, mapa, fx);
-    proximafase(mapa, mario, inimigo, numInimigos, faseAtual, numMapa, estado, tempoFinal, tempoInicio, fx5, dificuldade);
+    Inimigos(mapa, mario, inimigo, numInimigos, tempoInvencivel, dificuldade, numrandom, Dano);
+    movimento(mario, mapa, Pular);
+    proximafase(mapa, mario, inimigo, numInimigos, faseAtual, numMapa, estado, tempoFinal, tempoInicio, LevelUp, dificuldade);
 
     // Desenha o mapa, o jogador e os inimigos
-    DesenharMapa(mapa);
+    DesenharMapa(mapa, groundTXT, ladderTXT);
     DrawRectangle(mario->corpoFisico.posX - mario->corpoFisico.raio, mario->corpoFisico.posY - mario->corpoFisico.raio, mario->tamanho, mario->tamanho, BLUE);
 
     for (int i = 0; i < *numInimigos; i++){
@@ -519,16 +370,14 @@ void caseJogando(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo,
     }
 }
 
-void casePausado(EstadosJogo *estado, Sound fx2, Sound fx6){
-StopSound(fx6);
+void casePausado(EstadosJogo *estado, Sound Clique, Sound Andar, double *tempoPausado, double *tempoInicio, Font Titulo, Font Menu){
+    StopSound(Andar);
 
-    // Retângulo semitransparente por cima do jogo
-    DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, Fade(BLACK, 0.2f));
-
+    DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, BLACK);
     // Calcula posições dos textos
-    int larguraVoltar = MeasureText("VOLTAR AO JOGO", 20);
-    int larguraMenu = MeasureText("IR AO MENU", 20);
-    int larguraSair = MeasureText("SAIR DO JOGO", 20);
+    int larguraVoltar = MeasureTextEx(Menu, "VOLTAR AO JOGO", 40, 3.0f).x + 10;
+    int larguraMenu = MeasureTextEx(Menu, "IR AO MENU", 40, 3.0f).x + 10;
+    int larguraSair = MeasureTextEx(Menu, "SAIR DO JOGO", 40, 3.0f).x + 10;
     int larguraPausado = MeasureText("JOGO PAUSADO, ", 60);
     int larguraSelecione = MeasureText("SELECIONE UMA OPÇÃO", 60);
     int xVoltar = 50;
@@ -537,38 +386,46 @@ StopSound(fx6);
     int xPausado = (LARGURA_TELA - larguraPausado) / 2;
     int xSelecione = (LARGURA_TELA - larguraSelecione) / 2;
 
-    Rectangle voltaJogo = {xVoltar, 700, larguraVoltar, 20};
-    Rectangle menu = {xMenu, 700, larguraMenu, 20};
-    Rectangle vazaJogo = {xSair, 700, larguraSair, 20};
+    Rectangle voltaJogo = {xVoltar - 5, 700, larguraVoltar, 40};
+    Rectangle menu = {xMenu - 5, 700, larguraMenu, 40};
+    Rectangle vazaJogo = {xSair - 5, 700, larguraSair, 40};
+
+    if(CheckCollisionPointRec(GetMousePosition(), voltaJogo))
+        DrawRectangleRec(voltaJogo, Fade(DARKGRAY, 0.8));
+    else if(CheckCollisionPointRec(GetMousePosition(), menu))
+        DrawRectangleRec(menu, Fade(DARKGRAY, 0.8f));
+    else if(CheckCollisionPointRec(GetMousePosition(), vazaJogo))
+          DrawRectangleRec(vazaJogo, Fade(DARKGRAY, 0.8f));  
 
     DrawText("JOGO PAUSADO, ", xPausado, 300, 60, RED);
     DrawText("SELECIONE UMA OPÇÃO", xSelecione, 400, 60, RED);
-    DrawText("VOLTAR AO JOGO", xVoltar, 700, 20, CheckCollisionPointRec(GetMousePosition(), voltaJogo) ? RED : WHITE);
-    DrawText("IR AO MENU", xMenu, 700, 20, CheckCollisionPointRec(GetMousePosition(), menu) ? RED : WHITE);
-    DrawText("SAIR DO JOGO", xSair, 700, 20, CheckCollisionPointRec(GetMousePosition(), vazaJogo) ? RED : WHITE);
+    DrawTextEx(Menu, "VOLTAR AO JOGO", (Vector2) { xVoltar, 700}, 40, 3.0f, CheckCollisionPointRec(GetMousePosition(), voltaJogo) ? WHITE : LIGHTGRAY);
+    DrawTextEx(Menu, "IR AO MENU", (Vector2) { xMenu, 700 }, 40, 3.0f, CheckCollisionPointRec(GetMousePosition(), menu) ? WHITE : LIGHTGRAY);
+    DrawTextEx(Menu, "SAIR DO JOGO", (Vector2) { xSair, 700 }, 40, 3.0f, CheckCollisionPointRec(GetMousePosition(), vazaJogo) ? WHITE : LIGHTGRAY);
 
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-        if (CheckCollisionPointRec(GetMousePosition(), voltaJogo)){
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_TAB)){
+        if (CheckCollisionPointRec(GetMousePosition(), voltaJogo) || IsKeyPressed(KEY_TAB)){
+            *tempoInicio += GetTime() - *tempoPausado; // compensa o tempo pausado
             *estado = JOGANDO;
-            PlaySound(fx2);
+            PlaySound(Clique);
         }
-        if (CheckCollisionPointRec(GetMousePosition(), menu)){
+        if (CheckCollisionPointRec(GetMousePosition(), menu) && !(IsKeyPressed(KEY_TAB))){
             *estado = MENU;
-            PlaySound(fx2);
+            PlaySound(Clique);
         }
-        if (CheckCollisionPointRec(GetMousePosition(), vazaJogo)){
-            PlaySound(fx2);
+        if (CheckCollisionPointRec(GetMousePosition(), vazaJogo) && !(IsKeyPressed(KEY_TAB))){
+            PlaySound(Clique);
             CloseWindow();
         }
     }
 }
 
-void caseMorto(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, int *faseAtual, double *tempoInicio, double *tempoFinal, Sound fx2, Sound fx3){
+void caseMorto(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, int *numInimigos, Dificuldade *dificuldade, int *faseAtual, double *tempoInicio, double *tempoFinal, Sound Clique, Sound Morrer){
 
     DrawRectangle(0, 0, LARGURA_TELA, ALTURA_TELA, Fade(RED, 0.5f));
 
     if (mario->vidas == 0)
-        PlaySound(fx3);
+        PlaySound(Morrer);
 
     *faseAtual = 1;
     mario->vidas = 1;
@@ -596,26 +453,25 @@ void caseMorto(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo, i
             reiniciarJogo(mapa, mario, inimigo, numInimigos, dificuldade, estado, tempoFinal, tempoInicio);
             *tempoInicio = GetTime();
             *tempoFinal = 0;
-            PlaySound(fx2);
-            StopSound(fx3);
+            PlaySound(Clique);
+            StopSound(Morrer);
             *estado = JOGANDO;
         }
         if (CheckCollisionPointRec(GetMousePosition(), menu2)){
             mario->ativo = true;
             *estado = MENU;
-            PlaySound(fx2);
+            PlaySound(Clique);
         }
         if (CheckCollisionPointRec(GetMousePosition(), vazaJogo2)){
-            PlaySound(fx2);
+            PlaySound(Clique);
             CloseWindow();
         }
     }
 }
 
-void caseConfigs(EstadosJogo *estado, Dificuldade *dificuldade, Color *cortexto1, Color *cortexto2, Color *cortexto3, Sound fx2){
+void caseConfigs(EstadosJogo *estado, Dificuldade *dificuldade, Color *cortexto1, Color *cortexto2, Color *cortexto3, Sound Clique, Font Menu, Font titulo){
 ClearBackground(BLACK);
 
-    // A dificuldade atual fica vermelha, as outras ficam brancas
     if (*dificuldade != FACIL)
         *cortexto1 = WHITE;
     if (*dificuldade != NORMAL)
@@ -623,125 +479,160 @@ ClearBackground(BLACK);
     if (*dificuldade != DIFICIL)
         *cortexto3 = WHITE;
 
-    int larguraMorto = MeasureText("VOCÊ MORREU, ", 60);
     int larguraSelecione = MeasureText("SELECIONE UMA OPÇÃO", 60);
     int xSelecione = (LARGURA_TELA - larguraSelecione) / 2;
 
-    Rectangle facil = {xSelecione + 100, 300, larguraMorto - 110, 60};
-    Rectangle medio = {xSelecione + 100, 400, larguraMorto - 100, 60};
-    Rectangle dificil = {xSelecione + 100, 500, larguraMorto - 60, 60};
-    Rectangle menu3 = {xSelecione + 100, 700, larguraMorto - 110, 60};
+    Rectangle facil = {xSelecione + 100, 300, MeasureTextEx(Menu, "MODO FACIL", 100, 3.0f).x, 80};
+    Rectangle medio = {xSelecione + 100, 400, MeasureTextEx(Menu, "MODO MEDIO", 100, 3.0f).x, 80};
+    Rectangle dificil = {xSelecione + 100, 500, MeasureTextEx(Menu, "MODO DIFICIL", 100, 3.0f).x, 80};
+    Rectangle menu = {(LARGURA_TELA - MeasureTextEx(Menu, "IR AO MENU", 60, 3.0f).x) / 2, 700, MeasureTextEx(Menu, "IR AO MENU", 60, 3.0f).x, 60};
+    Rectangle Desc_facil = {xSelecione + 95, 380, 355, 95};
+    Rectangle Desc_medio = {xSelecione + 95, 480, 555, 95};
+    Rectangle Desc_dificl = {xSelecione + 95, 580, 565, 135};
 
-    DrawText("CONFIGURAÇÕES:", xSelecione + 100, 150, 60, RED);
+    DrawTextEx(titulo, "CONFIGURACOES:", (Vector2){xSelecione + 100, 150}, 120, 3.0f, RED);
 
-    // Hover — fica vermelho ao passar o mouse
     if (CheckCollisionPointRec(GetMousePosition(), facil))
-        *cortexto1 = RED;
+        *cortexto1 = GREEN;
     else if (CheckCollisionPointRec(GetMousePosition(), medio))
-        *cortexto2 = RED;
+        *cortexto2 = GRAY;
     else if (CheckCollisionPointRec(GetMousePosition(), dificil))
         *cortexto3 = RED;
 
-    DrawText("MODO FÁCIL", xSelecione + 100, 300, 60, *cortexto1);
-    DrawText("MODO MÉDIO", xSelecione + 100, 400, 60, *cortexto2);
-    DrawText("MODO DIFÍCIL", xSelecione + 100, 500, 60, *cortexto3);
-    DrawText("IR AO MENU", xSelecione + 100, 700, 60, CheckCollisionPointRec(GetMousePosition(), menu3) ? RED : WHITE);
+    DrawTextEx(Menu, "MODO FACIL", (Vector2){xSelecione + 100, 300}, 100, 3.0f, *cortexto1);
+    DrawTextEx(Menu, "MODO MEDIO", (Vector2){xSelecione + 100, 400}, 100, 3.0f, *cortexto2);
+    DrawTextEx(Menu, "MODO DIFICIL", (Vector2){xSelecione + 100, 500}, 100, 3.0f, *cortexto3);
+    DrawTextEx(Menu, "IR AO MENU", (Vector2){(LARGURA_TELA - MeasureTextEx(Menu, "IR AO MENU", 60, 3.0f).x) / 2, 700}, 60, 3.0f, CheckCollisionPointRec(GetMousePosition(), menu) ? RED : WHITE);
+
+    if (CheckCollisionPointRec(GetMousePosition(), facil)){
+        DrawRectangleRounded(Desc_facil, 0.1f, 1, DARKGRAY);
+        DrawTextEx(Menu, "3 Vidas", (Vector2){xSelecione + 110, 390}, 35, 3.0f, GREEN);
+        DrawTextEx(Menu, "Inimigos: Velocidade Lenta", (Vector2){xSelecione + 110, 430}, 35, 3.0f, GREEN);
+    }
+    else if (CheckCollisionPointRec(GetMousePosition(), medio)){
+        DrawRectangleRounded(Desc_medio, 0.1f, 1, DARKGRAY);
+        DrawTextEx(Menu, "2 Vidas", (Vector2){xSelecione + 110, 490}, 35, 3.0f, LIGHTGRAY);
+        DrawTextEx(Menu, "Inimigos: Velocidade similar a do jogador", (Vector2){xSelecione + 110, 530}, 35, 3.0f, LIGHTGRAY);
+    }
+    else if (CheckCollisionPointRec(GetMousePosition(), dificil)){
+        DrawRectangleRounded(Desc_dificl, 0.1f, 1, DARKGRAY);
+        DrawTextEx(Menu, "1 Vida", (Vector2){xSelecione + 110, 590}, 35, 3.0f, RED);
+        DrawTextEx(Menu, "Inimigos: Velocidade Rapida", (Vector2){xSelecione + 110, 630}, 35, 3.0f, RED);
+        DrawTextEx(Menu, "Inimigos aleatoriamente mudam de direcao", (Vector2){xSelecione + 110, 670}, 35, 3.0f,RED);
+    }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
         if (CheckCollisionPointRec(GetMousePosition(), facil)){
-            *cortexto1 = RED;
+            *cortexto1 = GREEN;
             *cortexto2 = WHITE;
             *cortexto3 = WHITE;
             *dificuldade = FACIL;
-            PlaySound(fx2);
+            PlaySound(Clique);
         }
         if (CheckCollisionPointRec(GetMousePosition(), medio)){
             *cortexto1 = WHITE;
-            *cortexto2 = RED;
+            *cortexto2 = GRAY;
             *cortexto3 = WHITE;
             *dificuldade = NORMAL;
-            PlaySound(fx2);
+            PlaySound(Clique);
         }
         if (CheckCollisionPointRec(GetMousePosition(), dificil)){
             *cortexto1 = WHITE;
             *cortexto2 = WHITE;
             *cortexto3 = RED;
             *dificuldade = DIFICIL;
-            PlaySound(fx2);
+            PlaySound(Clique);
         }
-        if (CheckCollisionPointRec(GetMousePosition(), menu3)){
+        if (CheckCollisionPointRec(GetMousePosition(), menu)){
             *estado = MENU;
-            PlaySound(fx2);
+            PlaySound(Clique);
         }
     }
 }
 
-void caseRanking(EstadosJogo *estado, PLACAR rank[10]){
+void caseRanking(EstadosJogo *estado, PLACAR rank[10], Sound Clique, Font Titulo, Font Nomes){
 
-    Color bronze = {205, 127, 50, 255};
+    Color BRONZE = {205, 127, 50, 255};
     ClearBackground(BLACK);
 
-    DrawText("RANKING", (LARGURA_TELA - MeasureText("RANKING", 60)) / 2, 100, 60, RED);
+    DrawTextEx(Titulo, "RANKING", (Vector2){40 + MeasureTextEx(Titulo, "RANKING", 110, 3.0f).x, 90 }, 120, 3.0f, RED);
 
     // Fundo de cada posição do ranking (ouro, prata, bronze, cinza)
-    DrawRectangle(25, 190, 850, 45, GOLD);
-    DrawRectangle(25, 235 + 5, 850, 45, LIGHTGRAY);
-    DrawRectangle(25, 280 + 10, 850, 45, bronze);
-    DrawRectangle(25, 325 + 15, 850, 45, DARKGRAY);
-    DrawRectangle(25, 370 + 20, 850, 45, DARKGRAY);
-    DrawRectangle(25, 415 + 25, 850, 45, DARKGRAY);
-    DrawRectangle(25, 460 + 30, 850, 45, DARKGRAY);
-    DrawRectangle(25, 505 + 35, 850, 45, DARKGRAY);
-    DrawRectangle(25, 550 + 40, 850, 45, DARKGRAY);
-    DrawRectangle(25, 640, 850, 45, DARKGRAY);
+    DrawRectangle(160, 200, 600 - 10, 45, GOLD);
+    DrawRectangle(160, 235 + 15, 600 - 10, 45, LIGHTGRAY);
+    DrawRectangle(160, 280 + 20, 600 - 10, 45, BRONZE);
+    DrawRectangle(160, 325 + 25, 600 - 10, 45, DARKGRAY);
+    DrawRectangle(160, 370 + 30, 600 - 10, 45, DARKGRAY);
+    DrawRectangle(160, 415 + 35, 600 - 10, 45, DARKGRAY);
+    DrawRectangle(160, 460 + 40, 600 - 10, 45, DARKGRAY);
+    DrawRectangle(160, 505 + 45, 600 - 10, 45, DARKGRAY);
+    DrawRectangle(160, 550 + 50, 600 - 10, 45, DARKGRAY);
+    DrawRectangle(160, 650, 600 - 10, 45, DARKGRAY);
 
     // Desenha cada entrada do ranking que estiver preenchida
     for (int i = 0; i < 10; i++){
         if (rank[i].nome[0] != '\0' && rank[i].tempo != 0){
-            char nomeDoCara[500];
-            char tempoDemorado[500];
+            char nomeDoCara[50];
+            char tempoDemorado[50];
             sprintf(nomeDoCara, "%d. %s", i + 1, rank[i].nome);
-            sprintf(tempoDemorado, "- %.2f segundos", rank[i].tempo);
-            DrawText(nomeDoCara, 35, 200 + i * 50, 29, BLACK);
-            DrawText(tempoDemorado, MeasureText(nomeDoCara, 29) + 50, 200 + i * 50, 29, LIME);
+            sprintf(tempoDemorado, "- %.2f Segundos", rank[i].tempo);
+            DrawTextEx(Nomes, nomeDoCara, (Vector2){175, 202 + i * 50}, 40, 3.0f, BLACK);
+            DrawTextEx(Nomes, tempoDemorado, (Vector2){MeasureTextEx(Nomes, nomeDoCara, 40, 3.0f).x + 185, 202 + i * 50}, 40, 3.0f, BLUE);
         }
     }
-    DrawText("CLIQUE QUALQUER TECLA PARA VOLTAR", 230, 730, 20, RED);
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || GetKeyPressed() > 0){
+    DrawText("CLIQUE QUALQUER TECLA PARA VOLTAR", 230, 710, 20, RED);
+    if (GetKeyPressed() > 0){
         *estado = MENU;
+    }
+    int larguraZerar = MeasureText("ZERAR RANKING", 20);
+    Rectangle botaoZerar = {LARGURA_TELA - larguraZerar - 20, ALTURA_TELA - 40, larguraZerar, 20};
+
+    DrawText("ZERAR RANKING", LARGURA_TELA - larguraZerar - 20, ALTURA_TELA - 40, 20, 
+         CheckCollisionPointRec(GetMousePosition(), botaoZerar) ? RED : DARKGRAY);
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (CheckCollisionPointRec(GetMousePosition(), botaoZerar)) {
+            zerarRanking(rank);
+            PlaySound(Clique);
+        }
     }
 }
 
-void caseVitoria(EstadosJogo *estado, PLACAR rank[10], double *tempoFinal, char *nomeJogador, int *letraNome, Sound fx6){
+void caseVitoria(EstadosJogo *estado, PLACAR rank[10], double *tempoFinal, char *nomeJogador, int *letraNome, Sound Andar, Font Nomes){
     ClearBackground(BLACK);
-    StopSound(fx6);
+    StopSound(Andar);
 
     char textoTempo[50];
     sprintf(textoTempo, "SEU TEMPO: %.2f segundos", *tempoFinal);
 
     DrawText("VOCÊ VENCEU!", 65, 200, 100, RED);
     DrawText(textoTempo, 260, 310, 30, BLUE);
-    DrawText("DIGITE SEU NOME:", 300, 500, 30, WHITE);
-    Rectangle nomes = {130, 540, 645, 50};
+    DrawText("DIGITE SEU NOME:", 310, 500, 30, WHITE);
+    Rectangle nomes = {260, 540, 380, 50};
     DrawRectangleRounded(nomes, 0.1, 1, DARKGRAY);
-    DrawText(nomeJogador, 140, 550, 30, GREEN);
+    DrawTextEx(Nomes, nomeJogador, (Vector2){ 270, 545 }, 40, 3.0f, GREEN);
     DrawText("PRESSIONE ENTER PARA CONFIRMAR", 255, 605, 20, RED);
 
   // Lê uma letra por frame
     int letra = GetCharPressed();
-    if (letra > 0 && *letraNome < 30){
+    if (letra > 0 && *letraNome < 20){
         nomeJogador[*letraNome] = (char)letra;
         (*letraNome)++;
         nomeJogador[*letraNome] = '\0';
     }
     if (IsKeyPressed(KEY_BACKSPACE) && *letraNome > 0){ // Backspace apaga a última letra
         (*letraNome)--;
-        nomeJogador[*letraNome] = '\0';
+        nomeJogador[*letraNome]  = '\0';
     }
     if (IsKeyPressed(KEY_ENTER) && *letraNome > 0){ // Enter confirma e vai pro ranking
         inserirRanking(rank, nomeJogador, (float)*tempoFinal);
         nomeJogador[0] = '\0';
         *letraNome = 0;
         *estado = RANKING;
+    }
+}
+void corrigirPosicao(Jogador *j){
+    if(j->corpoFisico.posX < 0){
+        j->corpoFisico.posX = 0;
     }
 }
