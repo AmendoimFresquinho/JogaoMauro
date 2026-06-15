@@ -11,10 +11,10 @@
   D        S        S   E  D  
  ZHZZZZZZZZZ      ZZZZZZZZZH 
   H                        H 
-  S    V  D    E      D    S 
-  ZZZZZZZZHZZZZZZZZZZZHZZZZZZ 
+  S    V  D    E      D  t S 
+  ZZZZZZZZHZZZZZZZZZZZHZZHZZZ 
           H           H       
-          S    D      S      
+    T     S    D Z    S      
  ZZZZZZZZZZZZZZHZZZZZZZZZZZZZ 
                H              
         D      S  K   D      
