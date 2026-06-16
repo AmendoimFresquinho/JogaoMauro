@@ -38,13 +38,10 @@ int Torre_computarEstado(Torre* torre, double tempo){
 
     //printf("[%.2f = %.2f? %d]", tempo, GetFrameTime(), tempo == GetFrameTime());
 
-    // torre.tempoProx = tempo em que ocorrerá a próxima animação de tiro
-    // tempoProx + torre.tempoAnimTiro será quando o tiro efetivamente ocorrerá
+    // torre.tempoProx = tempo em que ocorrerá a próxima mudança de estado
     // torre.minCooldown e torre.maxCooldown é o range em que o próximo tiro pode ocorrer
-    // quando o tempo passado for menor que minCooldown, a torre deve estar no modo "recarregando"
-    // quando o tempo for maior que minCooldown mas ainda não estiver começando o tiro, o modo deve ser "carregado"
     // quando o tiro começar, a torre deve estar no modo "atirando"
-    // modos: {0 = Carregado; 1 = Atirando; 2 = Recarregando}
+    // modos: {0 = Carregado; 1 = Preparando; 2 = Atirando; 3 = Resfriando}
 
     switch (torre->estado){
         case CARREGANDO:
@@ -56,7 +53,6 @@ int Torre_computarEstado(Torre* torre, double tempo){
         }
         break;
         case PREPARANDO:
-        // -- //
         torre->tempoProx -= tempo;
         if (torre->tempoProx <= 0){
             torre->estado = ATIRANDO;
@@ -83,10 +79,5 @@ int Torre_computarEstado(Torre* torre, double tempo){
     }
 
     return (torre->estado > 1)? torre->estado - 1 : torre->estado;
-    
     // CARREGANDO = 0, PREPARANDO e ATIRANDO = 1, RESFIRANDO = 2; Esses números são para que sejam usados os sprites corretos
-    
-    //if (torre.tempoProx - torre.minCooldown < tempo) return 2;
-    //return (torre.tempoProx + torre.tempoAnimTiro < tempo);
-
 }
