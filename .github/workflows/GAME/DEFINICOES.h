@@ -116,7 +116,7 @@ void movimento(Jogador *p, Mapa *mapa, Sound fx);
 //Funções do Mapa
 
 void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps* inimigo, int *numInimigos, EstadosJogo* estado, double* tempoFinal, double* tempoInicio, Dificuldade dificuldade);
-void DesenharMapa(Mapa *mapa, Texture2D groundTXT, Texture2D ladderTXT, Texture2D portalTXT, Anim portalANIM, Texture2D heartTXT);
+void DesenharMapa(Mapa *mapa, Texture2D groundTXT, Texture2D ladderTXT, Texture2D portalTXT, Anim portalANIM, Texture2D heartTXT, Texture2D slowTXT);
 void Inimigos(Mapa *mapa, Jogador *j, Opps *inimigo, int *numInimigos, float *invencivel, Dificuldade* dificuldade, int* numrandom, Sound fx4);
 void reiniciarJogo(Mapa *mapa, Jogador *jogador, Opps *inimigos, int *numInimigos, Dificuldade *dificuldade, EstadosJogo* estado, double* tempoFinal, double* tempoInicio);
 void proximafase(Mapa *mapa, Jogador *jog, Opps *inimigos, int *numInimigos, int *faseAtual, char *numMapa, EstadosJogo* estado, double *tempoFinal, double *tempoInicio, Sound fx5, Dificuldade *dificuldade);
