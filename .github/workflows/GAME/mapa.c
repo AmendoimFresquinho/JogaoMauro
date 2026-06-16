@@ -84,7 +84,7 @@ void LerMapa(Mapa *mapa, Jogador *jogador, const char *arquivo, Opps *inimigo, i
     fclose(file);
 }
 
-void DesenharMapa(Mapa *mapa, Texture2D groundTXT, Texture2D ladderTXT, Texture2D portalTXT, Anim portalANIM, Texture2D heartTXT){
+void DesenharMapa(Mapa *mapa, Texture2D groundTXT, Texture2D ladderTXT, Texture2D portalTXT, Anim portalANIM, Texture2D heartTXT, Texture2D slowTXT){
     for (int l = 0; l < LINHAS; l++){
         for (int c = 0; c < COLUNAS; c++){
             int x = c * TAMANHO_BLOCOS;
@@ -113,7 +113,7 @@ void DesenharMapa(Mapa *mapa, Texture2D groundTXT, Texture2D ladderTXT, Texture2
                 DrawTextureRec(portalTXT, rect, pos, WHITE);
                 break;
             case 'K':
-                DrawRectangle(x, y, TAMANHO_BLOCOS, TAMANHO_BLOCOS, YELLOW);
+                DrawTexture(slowTXT, x, y, WHITE);
                 break;
             case 'V':
                 DrawTexture(heartTXT, x, y, WHITE);
