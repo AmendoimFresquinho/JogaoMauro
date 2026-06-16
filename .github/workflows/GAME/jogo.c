@@ -7,7 +7,7 @@
 #include <math.h>
 #include <string.h>
 float velocidadeInimigo;
-Texture2D groundTXT, ladderTXT, FUNDOTXT, portalTXT, playerTXT, towerTXT[3], fogoTXT, heartTXT;
+Texture2D groundTXT, ladderTXT, FUNDOTXT, portalTXT, playerTXT, towerTXT[3], fogoTXT, heartTXT, slowTXT;
 Sound Pular, Clique, Morrer, Dano, LevelUp, Andar, Poder, Laser;
 Font Menu, Titulo, Letra_pequena;
 Anim portalANIM, playerANIM[3];
@@ -51,35 +51,40 @@ int main(){
     carregarRanking(rank); // Só puxa uma vez, pois o que muda vai para o arquivo, mas não precisa ler toda vez do arquivo, pode só atualizar direto na memória, mas tem que ler no começo senão ele não lembra se fechamos o jogo
 
     // Carrega as texturas
-    Image groundIMG = LoadImage("sprites/ground.png");
+    Image groundIMG = LoadImage("Sprites/ground.png");
     ImageResize(&groundIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
     groundTXT = LoadTextureFromImage(groundIMG);
     UnloadImage(groundIMG);
 
-    Image ladderIMG = LoadImage("sprites/ladder.png");
+    Image ladderIMG = LoadImage("Sprites/ladder.png");
     ImageResize(&ladderIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
     ladderTXT = LoadTextureFromImage(ladderIMG);
     UnloadImage(ladderIMG);
 
-    Image heartIMG = LoadImage("sprites/heart.png");
+    Image heartIMG = LoadImage("Sprites/heart.png");
     ImageResize(&heartIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
     heartTXT = LoadTextureFromImage(heartIMG);
     UnloadImage(heartIMG);
 
-    Image fogoIMG = LoadImage("sprites/fogoso.png");
+    Image slowIMG = LoadImage("Sprites/slowEnemies.png");
+    ImageResize(&slowIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
+    slowTXT = LoadTextureFromImage(slowIMG);
+    UnloadImage(slowIMG);
+
+    Image fogoIMG = LoadImage("Sprites/fogoso.png");
     ImageResize(&fogoIMG, TAMANHO_JOGADOR * 1.25, TAMANHO_JOGADOR * 1.25);
     fogoTXT = LoadTextureFromImage(fogoIMG);
     UnloadImage(fogoIMG);
 
-    Image towerIMG = LoadImage("sprites/tower.png");
+    Image towerIMG = LoadImage("Sprites/tower.png");
     ImageResize(&towerIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
     towerTXT[0] = LoadTextureFromImage(towerIMG);
     UnloadImage(towerIMG);
-    towerIMG = LoadImage("sprites/tower_shooting.png");
+    towerIMG = LoadImage("Sprites/tower_shooting.png");
     ImageResize(&towerIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
     towerTXT[1] = LoadTextureFromImage(towerIMG);
     UnloadImage(towerIMG);
-    towerIMG = LoadImage("sprites/tower_charging.png");
+    towerIMG = LoadImage("Sprites/tower_charging.png");
     ImageResize(&towerIMG, TAMANHO_BLOCOS, TAMANHO_BLOCOS);
     towerTXT[2] = LoadTextureFromImage(towerIMG);
     UnloadImage(towerIMG);
@@ -87,12 +92,12 @@ int main(){
     portalANIM.lar = TAMANHO_BLOCOS * 2; portalANIM.alt = TAMANHO_BLOCOS * 2;
     portalANIM.atual = 0; portalANIM.totframes = 4;
     portalANIM.delay = 0.2; portalANIM.ultimo = 0;
-    Image portalIMG = LoadImage("sprites/portal_spread.png");
+    Image portalIMG = LoadImage("Sprites/portal_spread.png");
     ImageResize(&portalIMG, (portalANIM.lar + 2) * portalANIM.totframes, (portalANIM.alt) + 2);
     portalTXT = LoadTextureFromImage(portalIMG);
     UnloadImage(portalIMG);
 
-    Image playerIMG = LoadImage("sprites/player_spread.png");
+    Image playerIMG = LoadImage("Sprites/player_spread.png");
     const int tamanho_animacao_jogador = TAMANHO_JOGADOR * 1.5;
     ImageResize(&playerIMG, (tamanho_animacao_jogador + 2) * 4, (tamanho_animacao_jogador + 2)* 3);
     playerTXT = LoadTextureFromImage(playerIMG);    
@@ -111,7 +116,7 @@ int main(){
     playerANIM[2].atual = 0; playerANIM[2].totframes = 1;
     playerANIM[2].delay = 1000; playerANIM[2].ultimo = 9999999;
 
-    Image fundoIMG = LoadImage("sprites/jogo.png");
+    Image fundoIMG = LoadImage("Sprites/jogo.png");
     ImageResize(&fundoIMG, LARGURA_TELA + 10, ALTURA_TELA);
     FUNDOTXT = LoadTextureFromImage(fundoIMG);
     UnloadImage(fundoIMG);
@@ -215,6 +220,7 @@ int main(){
     UnloadTexture(FUNDOTXT);
     UnloadTexture(fogoTXT);
     UnloadTexture(heartTXT);
+    UnloadTexture(slowTXT);
 
     CloseAudioDevice();
     CloseWindow();
@@ -433,7 +439,7 @@ void caseJogando(EstadosJogo *estado, Mapa *mapa, Jogador *mario, Opps *inimigo,
     proximafase(mapa, mario, inimigo, numInimigos, faseAtual, numMapa, estado, tempoFinal, tempoInicio, LevelUp, dificuldade);
 
     // Desenha o mapa, o jogador e os inimigos
-    DesenharMapa(mapa, groundTXT, ladderTXT, portalTXT, portalANIM, heartTXT);
+    DesenharMapa(mapa, groundTXT, ladderTXT, portalTXT, portalANIM, heartTXT, slowTXT);
     
     for (int i = 0; i < *numInimigos; i++){
         if (inimigo->fogos[i].ativo){
