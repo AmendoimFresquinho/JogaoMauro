@@ -4,11 +4,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/**
+ * @brief Desenha laser em uma célula
+ * @param t A torre que atirou
+ * @param offset Offset de células em relação à torre
+ * @param tamanhoCelula O tamanho de uma célula
+ * @return void
+*/
 void Torre_desenharLaser(Torre t, int offset, int tamanhoCelula){
     Color cor = t.estado == ATIRANDO? RED : YELLOW;
     DrawRectangle((t.celX + offset) * tamanhoCelula, t.celY * tamanhoCelula + (tamanhoCelula/6), tamanhoCelula, tamanhoCelula/3, cor);
 }
 
+/**
+ * @brief Testa se o tiro colide com o jogador
+ * @param t A torre que atirou
+ * @param cf O CorpoFisico do jogador em questão
+ * @param tamanhoCelula O tamanho de uma célula
+ * @param offset Offset de células em relação à torre
+ * @return true se colide, false caso contrário
+*/
 bool Torre_testarTiro(Torre t, CorpoFisico cf, int tamanhoCelula, int offset){
     int celY_p = (int) cf.posY / tamanhoCelula;
     if (celY_p != t.celY) return false;
@@ -19,6 +34,15 @@ bool Torre_testarTiro(Torre t, CorpoFisico cf, int tamanhoCelula, int offset){
     return (t.celX + offset == celX_p);
 }
 
+/**
+ * @brief Executa a lógica de atirar para uma torre
+ * @param t A torre para testar
+ * @param cf O CorpoFisico (do jogador) para testar as colisões com
+ * @param gridP Um ponteiro para a grid do mapa
+ * @param tamanhoCelula O tamanho em pixels de uma célula
+ * @param sX A quantidade de colunas no mapa
+ * @return true se o laser colidir com o CorpoFisico, false caso contrário
+*/
 bool Torre_atirar(Torre t, CorpoFisico cf, char* gridP, int tamanhoCelula, int sX){
     if (t.estado != PREPARANDO && t.estado != ATIRANDO) return false;
     // sX representa a quantidade de colunas, é usado para separar as linhas, visto que gridP é um ponteiro e não uma matriz
@@ -34,6 +58,12 @@ bool Torre_atirar(Torre t, CorpoFisico cf, char* gridP, int tamanhoCelula, int s
     return acerto;    
 }
 
+/**
+ * @brief Computa o estado da torre e muda se passar tempo o bastante
+ * @param torre Ponteiro para a torre à testar
+ * @param tempo GetFrameTime() em que a função é chamada
+ * @return Inteiro representando o id do sprite certo para desenhar
+*/
 int Torre_computarEstado(Torre* torre, double tempo){
 
     //printf("[%.2f = %.2f? %d]", tempo, GetFrameTime(), tempo == GetFrameTime());
