@@ -5,7 +5,6 @@
 #include "corpoFisico.h"
 #include "inimigos.h"
 
-
 //Definições do mapa
 
 #define LINHAS 30
@@ -33,7 +32,6 @@
 #define VIDAS_FACIL 3
 #define VIDAS_MEDIO 2
 #define VIDAS_DIFICIL 1
-
 
 //Definições Menu
 
@@ -132,9 +130,5 @@ void caseRanking(EstadosJogo *estado, PLACAR rank[10], Sound fx2, Font Titulo, F
 void caseVitoria(EstadosJogo *estado, PLACAR rank[10], double *tempoFinal, char *nomeJogador, int *letraNome, Sound fx6, Font Nomes);
 void powerUp(Jogador *j, Mapa *mapa, Sound fx7);
 void zerarRanking(PLACAR rank[10]);
-void corrigirPosicao(Jogador *j);
-
-
-
 
 #endif
